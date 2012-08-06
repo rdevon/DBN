@@ -31,22 +31,22 @@ int main (int argc, const char * argv[])
   
    //INIT RBM
    
-   GaussianLayer baselayer((int)data.train->size2);
+   GaussianLayer2 baselayer((int)data.train->size2);
    
    baselayer.addLayer(40);
    
    RBM rbm(&baselayer);
    
    //--------------
-   float learningrate = 0.001;
+   float learningrate = 0.02;
    float weightcost = 0.0001;
-   float hiddenlayernodes = 50;
+   float k = 50;
    float sparsitytarget = 0.2;
-   float decayrate = 0.9;
-   float sparsitycost = .01;
+   float decayrate = 0.95;
+   float sparsitycost = 0.005;
    float batchsize = 1;
    
-   CD cdLearner(learningrate, weightcost, hiddenlayernodes, sparsitytarget, decayrate, sparsitycost, &viz, batchsize);
+   CD cdLearner(learningrate, weightcost, k, sparsitytarget, decayrate, sparsitycost, &viz, batchsize);
    
    rbm.bot->shapeInput(data.train);
    //LEARNING!!!!!!!!!

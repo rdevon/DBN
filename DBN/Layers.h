@@ -22,6 +22,7 @@
 class Layer;
 class SigmoidLayer;
 class GaussianLayer;
+class GaussianLayer2;
 
 /////////////////////////////////////
 // Activator class
@@ -41,6 +42,7 @@ public:
    
    void activateSigmoidLayer(SigmoidLayer*, Layer* layer, Up_flag_t);
    void activateGaussianLayer(GaussianLayer*, Layer* layer, Up_flag_t);
+   void activateGaussianLayer2(GaussianLayer2*, Layer* layer, Up_flag_t);
    
 };
 
@@ -111,6 +113,20 @@ class GaussianLayer : public Layer {
 public:
    
    GaussianLayer(int n) : Layer(n){
+      biases_ = gsl_vector_float_calloc(nodenum_);
+   }
+   
+   void getFreeEnergy(){}
+   void activate(Activator&, Layer* layer, Up_flag_t);
+   void shapeInput(Input_t* input);
+   double reop(double arg){
+      return arg;}
+};
+
+class GaussianLayer2 : public Layer {
+public:
+   
+   GaussianLayer2(int n) : Layer(n){
       biases_ = gsl_vector_float_calloc(nodenum_);
    }
    
