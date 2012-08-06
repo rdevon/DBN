@@ -15,6 +15,7 @@
 		008927A315CC32BE00785B87 /* GaussianLayer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 008927A115CC32BE00785B87 /* GaussianLayer.cpp */; };
 		008E1DA615BDEB8100E14290 /* IO.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 008E1DA515BDEB8000E14290 /* IO.cpp */; };
 		00BACCD115D0386B000D52EB /* GaussianLayer2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00BACCCF15D0386B000D52EB /* GaussianLayer2.cpp */; };
+		00BACCD515D04438000D52EB /* ReLULayer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00BACCD315D04438000D52EB /* ReLULayer.cpp */; };
 		00E9CF9A15BF5E8100BFA559 /* Viz.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00E9CF9915BF5E8100BFA559 /* Viz.cpp */; };
 		00F7665115B8680500D1364E /* SupportMath.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00F7665015B8680500D1364E /* SupportMath.cpp */; };
 		00F7665415B86AD500D1364E /* RBM.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00F7665315B86AD500D1364E /* RBM.cpp */; };
@@ -52,6 +53,7 @@
 		008E1DA415BDE99300E14290 /* IO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IO.h; sourceTree = "<group>"; };
 		008E1DA515BDEB8000E14290 /* IO.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = IO.cpp; sourceTree = "<group>"; };
 		00BACCCF15D0386B000D52EB /* GaussianLayer2.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GaussianLayer2.cpp; sourceTree = "<group>"; };
+		00BACCD315D04438000D52EB /* ReLULayer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ReLULayer.cpp; sourceTree = "<group>"; };
 		00E9CF9915BF5E8100BFA559 /* Viz.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Viz.cpp; sourceTree = "<group>"; };
 		00F7664F15B867F900D1364E /* SupportMath.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SupportMath.h; sourceTree = "<group>"; };
 		00F7665015B8680500D1364E /* SupportMath.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SupportMath.cpp; sourceTree = "<group>"; };
@@ -112,6 +114,7 @@
 				00F8581815B70F2D00BBBD53 /* SigmoidLayer.cpp */,
 				008927A115CC32BE00785B87 /* GaussianLayer.cpp */,
 				00BACCCF15D0386B000D52EB /* GaussianLayer2.cpp */,
+				00BACCD315D04438000D52EB /* ReLULayer.cpp */,
 				00F7664F15B867F900D1364E /* SupportMath.h */,
 				00F7665015B8680500D1364E /* SupportMath.cpp */,
 				00F7665B15B9EB0000D1364E /* SupportFunctions.h */,
@@ -182,6 +185,7 @@
 				0023B68415C5BFF000CA4B4E /* Types.cpp in Sources */,
 				008927A315CC32BE00785B87 /* GaussianLayer.cpp in Sources */,
 				00BACCD115D0386B000D52EB /* GaussianLayer2.cpp in Sources */,
+				00BACCD515D04438000D52EB /* ReLULayer.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

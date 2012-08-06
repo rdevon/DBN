@@ -23,6 +23,7 @@ class Layer;
 class SigmoidLayer;
 class GaussianLayer;
 class GaussianLayer2;
+class ReLULayer;
 
 /////////////////////////////////////
 // Activator class
@@ -43,6 +44,7 @@ public:
    void activateSigmoidLayer(SigmoidLayer*, Layer* layer, Up_flag_t);
    void activateGaussianLayer(GaussianLayer*, Layer* layer, Up_flag_t);
    void activateGaussianLayer2(GaussianLayer2*, Layer* layer, Up_flag_t);
+   void activateReLULayer(ReLULayer*, Layer* layer, Up_flag_t);
    
 };
 
@@ -104,9 +106,27 @@ public:
    double reop(double arg){
       return softplus(arg);}
 };
+/////////////////////////////////////
+// Rectified Linear Unit layer class
+/////////////////////////////////////
+
+class ReLULayer : public Layer {
+public:
+   ReLULayer(int n) : Layer(n){
+      biases_ = gsl_vector_float_calloc(nodenum_);
+   }
+   
+   void getFreeEnergy(); //*TODO*
+   void activate(Activator&, Layer* layer, Up_flag_t);
+   void shapeInput(Input_t* input);
+   
+   
+   double reop(double arg){
+      return arg;}
+};
 
 /////////////////////////////////////
-// Gaussian layer class *todo*
+// Gaussian layer class
 /////////////////////////////////////
 
 class GaussianLayer : public Layer {
@@ -116,7 +136,7 @@ public:
       biases_ = gsl_vector_float_calloc(nodenum_);
    }
    
-   void getFreeEnergy(){}
+   void getFreeEnergy(){} //*TODO*
    void activate(Activator&, Layer* layer, Up_flag_t);
    void shapeInput(Input_t* input);
    double reop(double arg){

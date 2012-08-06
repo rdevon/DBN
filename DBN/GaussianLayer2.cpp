@@ -35,7 +35,8 @@ void Activator::activateGaussianLayer2(GaussianLayer2* s, Layer* layer, Up_flag_
       for (int j = 0; j < s->batchsize_; ++j){
          float preact = gsl_matrix_float_get(s->preactivations_, i, j);
          float mean = gaussian(preact);
-         gsl_matrix_float_set(s->activations_, i, j, mean);
+         if (mean < 0) std::cout << "what?" << std::endl;
+         gsl_matrix_float_set(s->means_, i, j, mean);
       }
    
    //Sample if sample flag on
@@ -44,7 +45,7 @@ void Activator::activateGaussianLayer2(GaussianLayer2* s, Layer* layer, Up_flag_
          for (int j = 0; j < s->batchsize_; ++j){
             float u = gsl_rng_uniform(r);
             float act = (float)(gsl_matrix_float_get(s->means_, i, j) > u);
-            gsl_matrix_float_set(s->activations_, i, j, act);
+            if (act < 0) std::cout << "what?" << std::endl;
          }
       }
    }

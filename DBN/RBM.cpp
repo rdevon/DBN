@@ -59,7 +59,7 @@ void RBM::getReconstructionError(Input_t *input){
          double dataAct = gsl_matrix_float_get(dataMat, i, j);
          double modelAct = gsl_matrix_float_get(modelMat, i, j);
          RE += dataAct * log(modelAct) + (1-dataAct)*log(1- modelAct); //Cost really.
-         //std::cout << (1-dataAct)*log(1- modelAct) << " " << dataAct * log(modelAct) << " " << dataAct << " " << modelAct << std::endl;
+         //if ((modelAct >=1)||(modelAct <= 0))std::cout << (1-dataAct)*log(1- modelAct) << " " << dataAct * log(modelAct) << " " << dataAct << " " << modelAct << std::endl;
       }
    }
    reconstructionError_ = (float)RE/(float)input->size1;

@@ -33,17 +33,17 @@ int main (int argc, const char * argv[])
    
    GaussianLayer2 baselayer((int)data.train->size2);
    
-   baselayer.addLayer(40);
+   baselayer.addLayer(200);
    
    RBM rbm(&baselayer);
    
    //--------------
-   float learningrate = 0.02;
+   float learningrate = 0.005;
    float weightcost = 0.0001;
-   float k = 50;
+   float k = 20;
    float sparsitytarget = 0.2;
-   float decayrate = 0.95;
-   float sparsitycost = 0.005;
+   float decayrate = 0.9;
+   float sparsitycost = 0;
    float batchsize = 1;
    
    CD cdLearner(learningrate, weightcost, k, sparsitytarget, decayrate, sparsitycost, &viz, batchsize);
@@ -53,7 +53,7 @@ int main (int argc, const char * argv[])
    for (int epoch = 0; epoch < 100 ; ++epoch){
       std::cout << std::endl << "Epoch " << epoch << std::endl;
       cdLearner.teach(&rbm, data.train);
-      std::cout << "Reconstruction error: " << rbm.reconstructionError_ << std::endl;
+      std::cout << "Reconstruction cost: " << rbm.reconstructionError_ << std::endl;
    }
    
    Visualizer samplerviz(&data, "RBMsamples");
