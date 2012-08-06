@@ -77,7 +77,6 @@ void DataSet::loadMNIST(){
 }
 
 void DataSet::loadfMRI(){
-   gsl_matrix_float_free(train);
    
    number = 220;
    width = 53;
@@ -128,6 +127,7 @@ void DataSet::loadfMRI(){
    closedir(dir);
    
    removeMeanImage();
+   removeMask();
 }
 
 
@@ -148,12 +148,48 @@ void DataSet::removeMeanImage(){
    
    gsl_vector_float_free(sample);
 }
-/* TODO
-void DataSet::applyMask(){
+
+void DataSet::removeMask(){
    int count = 0;
    float mean = gsl_stats_float_mean(meanImage_->data, meanImage_->stride, meanImage_->size);
    for (int i = 0; i < meanImage_->size; ++i) count += (gsl_vector_float_get(meanImage_, i) > mean);
    
-   gsl_matrix_float *newdata = 
+   gsl_matrix_float *newtrain = gsl_matrix_float_alloc(number, count);
    
-}*/
+   mask_ = gsl_vector_float_alloc(height*width);
+   masksize_ = height*width-count;
+   
+   for (int j = 0; j < height*width; ++j){
+      float val = gsl_vector_float_get(meanImage_, j);
+      if (val > mean) gsl_vector_float_set(mask_, j, 1);
+      else gsl_vector_float_set(mask_, j, 0);
+   }
+   
+   for (int i = 0; i < number; ++i){
+      int jprime = 0;
+      for (int j = 0; j < height*width; ++j){
+         float maskval = gsl_vector_float_get(mask_, j);
+         if (maskval == 1) {
+            float val = gsl_matrix_float_get(train, i, j);
+            gsl_matrix_float_set(newtrain, i, jprime, val);
+            ++jprime;
+         }
+      }
+   }
+   
+   gsl_matrix_float_free(train);
+   train = newtrain;
+}
+
+gsl_vector_float *DataSet::applyMask(gsl_vector_float *v){
+   gsl_vector_float *newv = gsl_vector_float_calloc(v->size + masksize_);
+   for (int i = 0, iprime = 0; i < newv->size; ++i) {
+      float maskval = gsl_vector_float_get(mask_, i);
+      if (maskval == 1) {
+         float val = gsl_vector_float_get(v, iprime);
+         gsl_vector_float_set(newv, i, val);
+         ++iprime;
+      }
+   }
+   return newv;
+}

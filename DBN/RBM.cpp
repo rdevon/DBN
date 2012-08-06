@@ -100,3 +100,4 @@ void RBM::sample(DataSet *data, Visualizer *viz){
    viz->plot();
    gsl_vector_float_free(samples);
 }
+

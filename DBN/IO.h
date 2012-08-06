@@ -19,22 +19,25 @@
 class DataSet{
 public:
    std::string name;
-   int height, width, number;
+   int height, width, number, masksize_;
    Input_t *train, *test, *validation;
    
    gsl_vector_float *meanImage_;
    gsl_vector_float *mask_;
    
-   DataSet(){}
+   DataSet(){
+      masksize_ = 0;
+      mask_ = NULL;
+      meanImage_ = NULL;
+   }
    
    void loadMNIST();
    void loadfMRI();
-   
    void splitValidate(float percentage = .1);
    void removeMeanImage();
    void getMask();
    void removeMask();
-   void addMask();
+   gsl_vector_float *applyMask(gsl_vector_float *v);
 };
 
 #endif

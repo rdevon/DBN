@@ -14,5 +14,5 @@
 
 float sigmoid(float x);
 double softplus(double x);
-
+float gaussian(float x);
 #endif

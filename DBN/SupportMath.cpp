@@ -16,3 +16,7 @@ float sigmoid(float x){
 double softplus(double x){
    return log(1+exp(x));
 }
+
+float gaussian(float x){
+   return (float)1/(2*PI)*expf(-pow(x, 2)/(float)2);
+}

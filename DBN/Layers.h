@@ -53,7 +53,6 @@ public:
    
    int nodenum_, batchsize_;
    
-   
    //All of the activations are done as nxb matrices, where n is the number of nodes and b is the batch size
    gsl_matrix_float *means_;            // The statistical mean of the activations.  These are good when doing less noisy analysis (see activation flags)
    gsl_matrix_float *activations_;      // The literal unit activations.
@@ -69,7 +68,7 @@ public:
    
    float freeEnergy_;                   // Free energy of layer
    
-   Layer(){}
+   Layer(int n);
    
    void clear();
    void initializeWeights();
@@ -91,7 +90,10 @@ public:
 class SigmoidLayer : public Layer {
 public:
    
-   SigmoidLayer(int n);
+   SigmoidLayer(int n) : Layer(n){
+      biases_ = gsl_vector_float_alloc(nodenum_);
+      gsl_vector_float_set_all(biases_, 0); // This is to force sparsity in simple cases.  Set to some negative number.  Good for analysis
+   }
    
    void getFreeEnergy();
    void activate(Activator&, Layer* layer, Up_flag_t);
@@ -106,8 +108,17 @@ public:
 /////////////////////////////////////
 
 class GaussianLayer : public Layer {
+public:
    
-   void getFreeEnergy();
+   GaussianLayer(int n) : Layer(n){
+      biases_ = gsl_vector_float_calloc(nodenum_);
+   }
+   
+   void getFreeEnergy(){}
+   void activate(Activator&, Layer* layer, Up_flag_t);
+   void shapeInput(Input_t* input);
+   double reop(double arg){
+      return arg;}
 };
 
 #endif

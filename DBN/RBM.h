@@ -26,15 +26,18 @@ public:
 
 class CD : public Learner{
 public:
-   float learningRate_;
+   float learningRate_, weightcost_, sparsitycost_;
    int k_;
    int batchsize_;
+   float p_, lambda_;
+   gsl_vector_float *oldnormterm_;
+   gsl_vector_float *newnormterm_;
    
    Visualizer *viz;
    
    ~CD(){}
    CD(){}
-   CD(float learningRate, int k, Visualizer *v, int batchsize=1) : learningRate_(learningRate), k_(k), viz(v), batchsize_(batchsize) {}
+   CD(float learningRate, float weightcost, int k, float p, float lambda, float sparsitycost, Visualizer *v, int batchsize=1) : learningRate_(learningRate), weightcost_(weightcost), k_(k), p_(p), lambda_(lambda), sparsitycost_(sparsitycost), viz(v), batchsize_(batchsize) {}
    
    void teach(RBM*, Input_t *input);
 };

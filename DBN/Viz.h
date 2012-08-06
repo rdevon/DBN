@@ -35,8 +35,8 @@ public:
       data_ = data;
       if (newname == "") name = data->name;
       else name = newname;
-      int pixelWidth = 300;
-      int maxsamples = 50;
+      int pixelWidth = 500;
+      int maxsamples = 40;
       //number of samples across and down
       across = pixelWidth/(data->width);
       down = maxsamples / across;

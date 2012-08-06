@@ -9,22 +9,6 @@
 #include <iostream>
 #include "Layers.h"
 
-SigmoidLayer::SigmoidLayer(int nodenum){
-   nodenum_ = nodenum;
-   batchsize_ = 1;      //Initialize to 1 but we'll redo these as the batchsize changes
-   
-   preactivations_ = gsl_matrix_float_calloc(nodenum_, batchsize_);
-   means_ = gsl_matrix_float_calloc(nodenum_, batchsize_);
-   activations_ = gsl_matrix_float_calloc(nodenum_, batchsize_);
-   
-   up = NULL;
-   
-   weights_ = NULL;
-   weightsT_ = weights_;
-   biases_ = gsl_vector_float_calloc(nodenum_);
-   batchbiases_ = gsl_matrix_float_calloc(nodenum_, batchsize_);
-}
-
 void Activator::activateSigmoidLayer(SigmoidLayer* s, Layer* layer, Up_flag_t up){
    gsl_matrix_float *weights;
    CBLAS_TRANSPOSE_t transFlag;
@@ -118,6 +102,7 @@ void SigmoidLayer::activate(Activator& act, Layer* layer, Up_flag_t UFLAG){
    act.activateSigmoidLayer(this, layer, UFLAG);
 }
 
+//The input needs to be shaped depending on the type of visible layer.
 void SigmoidLayer::shapeInput(Input_t* input){
    float min, max;
    gsl_matrix_float_minmax(input, &min, &max);

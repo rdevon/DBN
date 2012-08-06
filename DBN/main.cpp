@@ -23,25 +23,34 @@ int main (int argc, const char * argv[])
    //LOAD DATASET and INIT
    
    DataSet data;
-   data.loadMNIST();
+   data.loadfMRI();
    
    Visualizer viz(&data);
-   
    
    //---------DONE INIT
   
    //INIT RBM
-   SigmoidLayer baselayer(data.height*data.width);
    
-   baselayer.addLayer(500);
+   GaussianLayer baselayer((int)data.train->size2);
+   
+   baselayer.addLayer(40);
    
    RBM rbm(&baselayer);
    
    //--------------
-   CD cdLearner(.1, 15, &viz,20);
+   float learningrate = 0.001;
+   float weightcost = 0.0001;
+   float hiddenlayernodes = 50;
+   float sparsitytarget = 0.2;
+   float decayrate = 0.9;
+   float sparsitycost = .01;
+   float batchsize = 1;
    
+   CD cdLearner(learningrate, weightcost, hiddenlayernodes, sparsitytarget, decayrate, sparsitycost, &viz, batchsize);
+   
+   rbm.bot->shapeInput(data.train);
    //LEARNING!!!!!!!!!
-   for (int epoch = 0; epoch < 20 ; ++epoch){
+   for (int epoch = 0; epoch < 100 ; ++epoch){
       std::cout << std::endl << "Epoch " << epoch << std::endl;
       cdLearner.teach(&rbm, data.train);
       std::cout << "Reconstruction error: " << rbm.reconstructionError_ << std::endl;

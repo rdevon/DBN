@@ -13,14 +13,12 @@
 #include "gsl/gsl_matrix.h"
 #include "gsl/gsl_rng.h"
 #include <string>
-
+#define PI 3.1415
 
 extern std::string MNISTpath;
 extern std::string plotpath;
 extern std::string fMRIpath;
 extern gsl_rng * r;
-
-
 
 
 typedef gsl_matrix_float   Input_t;

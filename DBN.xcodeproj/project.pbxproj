@@ -12,6 +12,7 @@
 		0023B68A15C6EEC900CA4B4E /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0023B68915C6EEC900CA4B4E /* OpenGL.framework */; };
 		005D2A2815ACE25D007D675F /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 005D2A2715ACE25D007D675F /* main.cpp */; };
 		005D2A2A15ACE25D007D675F /* DBN.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 005D2A2915ACE25D007D675F /* DBN.1 */; };
+		008927A315CC32BE00785B87 /* GaussianLayer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 008927A115CC32BE00785B87 /* GaussianLayer.cpp */; };
 		008E1DA615BDEB8100E14290 /* IO.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 008E1DA515BDEB8000E14290 /* IO.cpp */; };
 		00E9CF9A15BF5E8100BFA559 /* Viz.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00E9CF9915BF5E8100BFA559 /* Viz.cpp */; };
 		00F7665115B8680500D1364E /* SupportMath.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00F7665015B8680500D1364E /* SupportMath.cpp */; };
@@ -45,6 +46,7 @@
 		005D2A2915ACE25D007D675F /* DBN.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = DBN.1; sourceTree = "<group>"; };
 		005D2A3015ACE26F007D675F /* Layers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Layers.h; sourceTree = "<group>"; };
 		005D2A3115ADDBD2007D675F /* Types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Types.h; sourceTree = "<group>"; };
+		008927A115CC32BE00785B87 /* GaussianLayer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GaussianLayer.cpp; sourceTree = "<group>"; };
 		008E1DA315BDCD6000E14290 /* Viz.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Viz.h; sourceTree = "<group>"; };
 		008E1DA415BDE99300E14290 /* IO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IO.h; sourceTree = "<group>"; };
 		008E1DA515BDEB8000E14290 /* IO.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = IO.cpp; sourceTree = "<group>"; };
@@ -100,12 +102,13 @@
 				00E9CF9915BF5E8100BFA559 /* Viz.cpp */,
 				008E1DA415BDE99300E14290 /* IO.h */,
 				008E1DA515BDEB8000E14290 /* IO.cpp */,
-				00F7665515B88A7200D1364E /* Learner.cpp */,
 				00F7665215B86AC400D1364E /* RBM.h */,
+				00F7665515B88A7200D1364E /* Learner.cpp */,
 				00F7665315B86AD500D1364E /* RBM.cpp */,
 				005D2A3015ACE26F007D675F /* Layers.h */,
 				00F8581515B70F1900BBBD53 /* Layers.cpp */,
 				00F8581815B70F2D00BBBD53 /* SigmoidLayer.cpp */,
+				008927A115CC32BE00785B87 /* GaussianLayer.cpp */,
 				00F7664F15B867F900D1364E /* SupportMath.h */,
 				00F7665015B8680500D1364E /* SupportMath.cpp */,
 				00F7665B15B9EB0000D1364E /* SupportFunctions.h */,
@@ -174,6 +177,7 @@
 				008E1DA615BDEB8100E14290 /* IO.cpp in Sources */,
 				00E9CF9A15BF5E8100BFA559 /* Viz.cpp in Sources */,
 				0023B68415C5BFF000CA4B4E /* Types.cpp in Sources */,
+				008927A315CC32BE00785B87 /* GaussianLayer.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

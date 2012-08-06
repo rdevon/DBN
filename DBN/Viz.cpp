@@ -474,6 +474,11 @@ int update(double time)
 //END OPENGL stuff
 
 void Visualizer::add(gsl_vector_float *sample){
+   
+   if (data_->mask_ != NULL){
+      sample = data_->applyMask(sample);
+   }
+   
    int i = (count/across)*imageH;
    int j = count%across*imageW;
    
@@ -504,16 +509,15 @@ void Visualizer::plot(){
       }
       fprintf(file_handle, "\n");
    }
-         
    
    fflush(file_handle);
-   
+   fclose(file_handle);
 }
 
 void Visualizer::initViz(){
    
-   int width = imageW*across*5;
-   int height = imageH*down*5;
+   int width = imageW*across*3;
+   int height = imageH*down*3;
    // Initialize GLFW
    _running = true;
    glfwInit();
