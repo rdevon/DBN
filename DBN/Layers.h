@@ -9,6 +9,7 @@
 #ifndef DBN_Layers_h
 #define DBN_Layers_h
 
+#include <iostream>
 #include "Types.h"
 #include "gsl/gsl_vector.h"
 #include "gsl/gsl_matrix.h"
@@ -16,14 +17,15 @@
 #include "gsl/gsl_rng.h"
 #include <gsl/gsl_randist.h>
 #include "SupportMath.h"
+#include "SupportFunctions.h"
 #include "IO.h"
 #include <gsl/gsl_statistics.h>
 
 class Layer;
 class SigmoidLayer;
 class GaussianLayer;
-class GaussianLayer2;
 class ReLULayer;
+class CSoftmaxLayer;
 
 /////////////////////////////////////
 // Activator class
@@ -34,18 +36,16 @@ class ReLULayer;
 // (independent of type).  For instance, you might want to use the activations of a unit when finding the activations and probs, but other times you might want
 // less noise and to use the probabilities themselves.  Just set the flag depending on the type of activations.
 // In addition, I think the acticator visitor will become more useful as a layer has multiple acitvation sources.
-class Activator{
+class PreActivator{
 public:
-   Activation_flag_t flag_;       // This flag for type of activations (see Types.h)
+   Layer *sL1_, *sL2_, *sL3_;
    
-   ~Activator(){}
-   Activator() {flag_ = ACTIVATIONS;}
+   Up_flag_t up_;
    
-   void activateSigmoidLayer(SigmoidLayer*, Layer* layer, Up_flag_t);
-   void activateGaussianLayer(GaussianLayer*, Layer* layer, Up_flag_t);
-   void activateGaussianLayer2(GaussianLayer2*, Layer* layer, Up_flag_t);
-   void activateReLULayer(ReLULayer*, Layer* layer, Up_flag_t);
+   ~PreActivator(){}
+   PreActivator(Up_flag_t up, Layer *sL1, Layer *sL2 = NULL, Layer *sL3 = NULL) : up_(up), sL1_(sL1), sL2_(sL2), sL3_(sL3) {}
    
+   void preactivate(Layer*);
 };
 
 /////////////////////////////////////
@@ -54,11 +54,13 @@ public:
 
 class Layer {
 public:
+   bool frozen, on;
+   PreActivator *preactivator;
    
    int nodenum_, batchsize_;
    
    //All of the activations are done as nxb matrices, where n is the number of nodes and b is the batch size
-   gsl_matrix_float *means_;            // The statistical mean of the activations.  These are good when doing less noisy analysis (see activation flags)
+   gsl_matrix_float *probabilities_;            // The statistical mean of the activations.  These are good when doing less noisy analysis (see activation flags)
    gsl_matrix_float *activations_;      // The literal unit activations.
    gsl_matrix_float *preactivations_;   // These are for the binary units specifically, but might be needed for others.  The sigmoid function is
                                        // problematic when concluting the reconstruction error.
@@ -81,8 +83,10 @@ public:
    Layer *getTop();
    void makeBatch(int batchsize);
    
+   void activate(Activation_flag_t act);
+   
    virtual void getFreeEnergy() = 0;
-   virtual void activate(Activator&, Layer* layer, Up_flag_t) = 0;
+   virtual void setProbs() = 0;
    virtual void shapeInput(Input_t* input) = 0;                         // Depending on the type of layer you need to shape the input.  Should be useful in DBNS as well.
    virtual double reop(double arg) = 0;
 };
@@ -100,14 +104,14 @@ public:
    }
    
    void getFreeEnergy();
-   void activate(Activator&, Layer* layer, Up_flag_t);
+   void setProbs();
    
    void shapeInput(Input_t* input);
    double reop(double arg){
       return softplus(arg);}
 };
 /////////////////////////////////////
-// Rectified Linear Unit layer class
+// Rectified Linear Unit layer class *TODO*
 /////////////////////////////////////
 
 class ReLULayer : public Layer {
@@ -117,9 +121,26 @@ public:
    }
    
    void getFreeEnergy(); //*TODO*
-   void activate(Activator&, Layer* layer, Up_flag_t);
+   void setProbs();
    void shapeInput(Input_t* input);
    
+   double reop(double arg){
+      return arg;}
+};
+
+/////////////////////////////////////
+// Continuous Softmax layer class
+/////////////////////////////////////
+
+class CSoftmaxLayer : public Layer {
+public:
+   CSoftmaxLayer(int n) : Layer(n){
+      biases_ = gsl_vector_float_calloc(nodenum_); //Maybe .5?
+   }
+   
+   void getFreeEnergy(); //*TODO*
+   void setProbs();
+   void shapeInput(Input_t* input);
    
    double reop(double arg){
       return arg;}
@@ -132,26 +153,14 @@ public:
 class GaussianLayer : public Layer {
 public:
    
-   GaussianLayer(int n) : Layer(n){
+   GaussianLayer(int n) : Layer(n) {
       biases_ = gsl_vector_float_calloc(nodenum_);
+      for (int i = 0; i < nodenum_; ++i)
+         gsl_vector_float_set(biases_, i, (float)gsl_ran_gaussian(r, 0.01));
    }
    
    void getFreeEnergy(){} //*TODO*
-   void activate(Activator&, Layer* layer, Up_flag_t);
-   void shapeInput(Input_t* input);
-   double reop(double arg){
-      return arg;}
-};
-
-class GaussianLayer2 : public Layer {
-public:
-   
-   GaussianLayer2(int n) : Layer(n){
-      biases_ = gsl_vector_float_calloc(nodenum_);
-   }
-   
-   void getFreeEnergy(){}
-   void activate(Activator&, Layer* layer, Up_flag_t);
+   void setProbs();
    void shapeInput(Input_t* input);
    double reop(double arg){
       return arg;}

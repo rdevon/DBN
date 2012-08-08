@@ -1,51 +1,21 @@
 //
-//  GaussianLayer.cpp
+//  GaussianLayer2.cpp
 //  DBN
 //
-//  Created by Devon Hjelm on 8/3/12.
+//  Created by Devon Hjelm on 8/6/12.
 //
 //
 
 #include <iostream>
 #include "Layers.h"
 
-void Activator::activateGaussianLayer(GaussianLayer* s, Layer* layer, Up_flag_t up){
-   gsl_matrix_float *weights;
-   CBLAS_TRANSPOSE_t transFlag;
-   
-   //Check flag for up or down activation
-   if (up) {
-      weights = layer->weights_;
-      transFlag = CblasNoTrans;
-   }
-   
-   else {
-      weights = s->weights_;
-      transFlag = CblasTrans;
-   }
-   
-   //Expand the sigmoid biases into a matrix for matrix operation
-   for (int j = 0; j < s->batchsize_; ++j) gsl_matrix_float_set_col(s->batchbiases_, j, s->biases_);
-   
-   //Compute x = W^T v + b or W v + b depending on up or down activation
-   gsl_blas_sgemm(transFlag, CblasNoTrans, 1, weights, layer->activations_, 0, s->preactivations_);
-   gsl_matrix_float_add(s->preactivations_, s->batchbiases_);
-   
-   gsl_matrix_float_memcpy(s->means_, s->preactivations_);
-      
-   if (flag_ == ACTIVATIONS){
-      for (int i = 0; i < s->nodenum_; ++i)
-         for (int j = 0; j < s->batchsize_; ++j){
-            float mean = gsl_matrix_float_get(s->means_, i, j);
-            float act = (float)gsl_ran_gaussian_pdf(mean, 1);
-            gsl_matrix_float_set(s->activations_, i, j, act);
-         }
-   }
-   else gsl_matrix_float_memcpy(s->activations_, s->means_);
-}
-
-void GaussianLayer::activate(Activator& act, Layer* layer, Up_flag_t UFLAG){
-   act.activateGaussianLayer(this, layer, UFLAG);
+void GaussianLayer::setProbs(){
+   for (int i = 0; i < nodenum_; ++i)
+      for (int j = 0; j < batchsize_; ++j){
+         float preact = gsl_matrix_float_get(preactivations_, i, j);
+         float probability = gaussian(preact);
+         gsl_matrix_float_set(probabilities_, i, j, probability);
+      }
 }
 
 void GaussianLayer::shapeInput(Input_t* input){

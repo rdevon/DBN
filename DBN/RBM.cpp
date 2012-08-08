@@ -9,23 +9,22 @@
 #include <iostream>
 #include "RBM.h"
 
-RBM::RBM(Layer* layer) : bot(layer), top(layer->up){}
+RBM::RBM(Layer* layer) : bot(layer), top(layer->up), reconstructionError_(0){}
+
 
 void RBM::getFreeEnergy(){
    bot->getFreeEnergy();
    freeEnergy_ = bot->freeEnergy_;
-   activator = Activator();
-   activator.flag_ = ACTIVATIONS;
 }
 
-void RBM::gibbs_HV(){
-   top->activate(activator, bot, UPFLAG);
-   bot->activate(activator, top, DOWNFLAG);
+void RBM::gibbs_HV(Activation_flag_t act){
+   top->activate(act);
+   bot->activate(act);
 }
 
-void RBM::gibbs_VH(){
-   bot->activate(activator, top, DOWNFLAG);
-   top->activate(activator, bot, UPFLAG);
+void RBM::gibbs_VH(Activation_flag_t act){
+   bot->activate(act);
+   top->activate(act);
 }
 
 void RBM::getReconstructionError(Input_t *input){
@@ -33,8 +32,8 @@ void RBM::getReconstructionError(Input_t *input){
    top->makeBatch((int)input->size1);
    bot->makeBatch((int)input->size1);
    
-   //set flag to probs as this is less noisy and best for reconstructions
-   activator.flag_ = PROBABILITIES;
+   top->preactivator = new PreActivator(UPFLAG, bot);
+   bot->preactivator = new PreActivator(DOWNFLAG, top);
    
    std::cout << std::endl << "Calculating Reconstruction Error" << std::endl;
    double RE = 0;
@@ -43,19 +42,16 @@ void RBM::getReconstructionError(Input_t *input){
    gsl_matrix_float *dataMat = gsl_matrix_float_alloc(input->size2, input->size1), *modelMat;
    gsl_matrix_float_transpose_memcpy(dataMat, input);
    gsl_matrix_float_memcpy(bot->activations_, dataMat);
-   gsl_matrix_float_memcpy(bot->means_, dataMat);
+   gsl_matrix_float_memcpy(bot->probabilities_, dataMat);
    
    //gibbs once over the whole matrix
-   gibbs_HV();
+   gibbs_HV(PROBABILITIES);
    
    modelMat = bot->activations_;
    
    //Hmmmm worth doing batches?  Dunno.  Since I have to go through by hand and modify every entry.  Maybe the compiler can handle this
    for (int i = 0; i < bot->nodenum_; ++i){
       for (int j = 0; j < bot->batchsize_; ++j){
-         //We use the reop operator here in case layers have weird behavior that we need to catch when caculating the reconstruction error.
-         //double dataAct = bot->reop(gsl_vector_float_get(dataVec, i));
-         //double modelAct = bot->reop(gsl_vector_float_get(modelVec, i));
          double dataAct = gsl_matrix_float_get(dataMat, i, j);
          double modelAct = gsl_matrix_float_get(modelMat, i, j);
          RE += dataAct * log(modelAct) + (1-dataAct)*log(1- modelAct); //Cost really.
@@ -71,9 +67,6 @@ void RBM::sample(DataSet *data, Visualizer *viz){
    if (data->test == NULL) input = data->train;
    else input = data->test;
    
-   //For sampling, probabilities are best
-   activator.flag_ = PROBABILITIES;
-   
    std::cout << "Sampling RBM" << std::endl;
    
    viz->clear();
@@ -86,11 +79,11 @@ void RBM::sample(DataSet *data, Visualizer *viz){
       int u = (int)gsl_rng_uniform_int(r, input->size1);
       gsl_matrix_float_get_row(samples, input, u);
       gsl_matrix_float_set_col(bot->activations_, j, samples);
-      gsl_matrix_float_set_col(bot->means_, j, samples);
+      gsl_matrix_float_set_col(bot->probabilities_, j, samples);
    }
       
    for (int epoch = 0; epoch < 1000; ++epoch) {
-      gibbs_HV();
+      gibbs_HV(PROBABILITIES);
    }
    for (int j = 0; j < viz->across*viz->down; ++j){
       gsl_matrix_float_get_col(samples, bot->activations_, j);

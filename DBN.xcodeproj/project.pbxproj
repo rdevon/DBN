@@ -7,14 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		000BD30515D1996E004C59BF /* CSoftmaxLayer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 000BD30315D1996E004C59BF /* CSoftmaxLayer.cpp */; };
 		0023B68415C5BFF000CA4B4E /* Types.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0023B68315C5BFF000CA4B4E /* Types.cpp */; };
 		0023B68815C6EEAF00CA4B4E /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0023B68715C6EEAF00CA4B4E /* Cocoa.framework */; };
 		0023B68A15C6EEC900CA4B4E /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0023B68915C6EEC900CA4B4E /* OpenGL.framework */; };
 		005D2A2815ACE25D007D675F /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 005D2A2715ACE25D007D675F /* main.cpp */; };
 		005D2A2A15ACE25D007D675F /* DBN.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 005D2A2915ACE25D007D675F /* DBN.1 */; };
-		008927A315CC32BE00785B87 /* GaussianLayer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 008927A115CC32BE00785B87 /* GaussianLayer.cpp */; };
 		008E1DA615BDEB8100E14290 /* IO.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 008E1DA515BDEB8000E14290 /* IO.cpp */; };
-		00BACCD115D0386B000D52EB /* GaussianLayer2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00BACCCF15D0386B000D52EB /* GaussianLayer2.cpp */; };
+		00BACCD115D0386B000D52EB /* GaussianLayer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00BACCCF15D0386B000D52EB /* GaussianLayer.cpp */; };
 		00BACCD515D04438000D52EB /* ReLULayer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00BACCD315D04438000D52EB /* ReLULayer.cpp */; };
 		00E9CF9A15BF5E8100BFA559 /* Viz.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00E9CF9915BF5E8100BFA559 /* Viz.cpp */; };
 		00F7665115B8680500D1364E /* SupportMath.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00F7665015B8680500D1364E /* SupportMath.cpp */; };
@@ -39,6 +39,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		000BD30315D1996E004C59BF /* CSoftmaxLayer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CSoftmaxLayer.cpp; sourceTree = "<group>"; };
 		0023B68315C5BFF000CA4B4E /* Types.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Types.cpp; sourceTree = "<group>"; };
 		0023B68615C6ECB000CA4B4E /* opengl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = opengl.h; sourceTree = "<group>"; };
 		0023B68715C6EEAF00CA4B4E /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
@@ -48,11 +49,10 @@
 		005D2A2915ACE25D007D675F /* DBN.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = DBN.1; sourceTree = "<group>"; };
 		005D2A3015ACE26F007D675F /* Layers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Layers.h; sourceTree = "<group>"; };
 		005D2A3115ADDBD2007D675F /* Types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Types.h; sourceTree = "<group>"; };
-		008927A115CC32BE00785B87 /* GaussianLayer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GaussianLayer.cpp; sourceTree = "<group>"; };
 		008E1DA315BDCD6000E14290 /* Viz.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Viz.h; sourceTree = "<group>"; };
 		008E1DA415BDE99300E14290 /* IO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IO.h; sourceTree = "<group>"; };
 		008E1DA515BDEB8000E14290 /* IO.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = IO.cpp; sourceTree = "<group>"; };
-		00BACCCF15D0386B000D52EB /* GaussianLayer2.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GaussianLayer2.cpp; sourceTree = "<group>"; };
+		00BACCCF15D0386B000D52EB /* GaussianLayer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GaussianLayer.cpp; sourceTree = "<group>"; };
 		00BACCD315D04438000D52EB /* ReLULayer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ReLULayer.cpp; sourceTree = "<group>"; };
 		00E9CF9915BF5E8100BFA559 /* Viz.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Viz.cpp; sourceTree = "<group>"; };
 		00F7664F15B867F900D1364E /* SupportMath.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SupportMath.h; sourceTree = "<group>"; };
@@ -112,8 +112,8 @@
 				005D2A3015ACE26F007D675F /* Layers.h */,
 				00F8581515B70F1900BBBD53 /* Layers.cpp */,
 				00F8581815B70F2D00BBBD53 /* SigmoidLayer.cpp */,
-				008927A115CC32BE00785B87 /* GaussianLayer.cpp */,
-				00BACCCF15D0386B000D52EB /* GaussianLayer2.cpp */,
+				000BD30315D1996E004C59BF /* CSoftmaxLayer.cpp */,
+				00BACCCF15D0386B000D52EB /* GaussianLayer.cpp */,
 				00BACCD315D04438000D52EB /* ReLULayer.cpp */,
 				00F7664F15B867F900D1364E /* SupportMath.h */,
 				00F7665015B8680500D1364E /* SupportMath.cpp */,
@@ -183,9 +183,9 @@
 				008E1DA615BDEB8100E14290 /* IO.cpp in Sources */,
 				00E9CF9A15BF5E8100BFA559 /* Viz.cpp in Sources */,
 				0023B68415C5BFF000CA4B4E /* Types.cpp in Sources */,
-				008927A315CC32BE00785B87 /* GaussianLayer.cpp in Sources */,
-				00BACCD115D0386B000D52EB /* GaussianLayer2.cpp in Sources */,
+				00BACCD115D0386B000D52EB /* GaussianLayer.cpp in Sources */,
 				00BACCD515D04438000D52EB /* ReLULayer.cpp in Sources */,
+				000BD30515D1996E004C59BF /* CSoftmaxLayer.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

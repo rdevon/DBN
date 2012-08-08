@@ -6,51 +6,17 @@
 //  Copyright 2012 __MyCompanyName__. All rights reserved.
 //
 
-#include <iostream>
+
 #include "Layers.h"
 
-void Activator::activateSigmoidLayer(SigmoidLayer* s, Layer* layer, Up_flag_t up){
-   gsl_matrix_float *weights;
-   CBLAS_TRANSPOSE_t transFlag;
-   
-   //Check flag for up or down activation
-   if (up) {
-      weights = layer->weights_;
-      transFlag = CblasNoTrans;
-   }
-   
-   else {
-      weights = s->weights_;
-      transFlag = CblasTrans;
-   }
-   
-   //Expand the sigmoid biases into a matrix for matrix operation
-   for (int j = 0; j < s->batchsize_; ++j) gsl_matrix_float_set_col(s->batchbiases_, j, s->biases_);
-   
-   //Compute x = W^T v + b or W v + b depending on up or down activation
-   gsl_blas_sgemm(transFlag, CblasNoTrans, 1, weights, layer->activations_, 0, s->preactivations_);
-   gsl_matrix_float_add(s->preactivations_, s->batchbiases_);
-   
+void SigmoidLayer::setProbs(){
    //Apply sigmoid.  Might want to pass a general functor later
-   for (int i = 0; i < s->nodenum_; ++i){
-      for (int j = 0; j < s->batchsize_; ++j){
-         float sigprob = sigmoid(gsl_matrix_float_get(s->preactivations_, i, j));
-         gsl_matrix_float_set(s->means_, i, j, sigprob);
+   for (int i = 0; i < nodenum_; ++i){
+      for (int j = 0; j < batchsize_; ++j){
+         float sigprob = sigmoid(gsl_matrix_float_get(preactivations_, i, j));
+         gsl_matrix_float_set(probabilities_, i, j, sigprob);
       }
    }
-   
-   //Sample if sample flag on
-   if (flag_ == ACTIVATIONS){
-      for (int i = 0; i < s->nodenum_; ++i){
-         for (int j = 0; j < s->batchsize_; ++j){
-            float u = gsl_rng_uniform(r);
-            float act = (float)(gsl_matrix_float_get(s->means_, i, j) > u);
-            gsl_matrix_float_set(s->activations_, i, j, act);
-         }
-      }
-   }
-   else gsl_matrix_float_memcpy(s->activations_, s->means_);
-   
 }
 
 void SigmoidLayer :: getFreeEnergy() {
@@ -95,11 +61,6 @@ void SigmoidLayer :: getFreeEnergy() {
    gsl_matrix_float_free(x_j);
    gsl_vector_float_free(identity);
    
-}
-
-//This may seem superflurous, but it will be useful to have visitor function when there are multiple activation sources
-void SigmoidLayer::activate(Activator& act, Layer* layer, Up_flag_t UFLAG){
-   act.activateSigmoidLayer(this, layer, UFLAG);
 }
 
 //The input needs to be shaped depending on the type of visible layer.

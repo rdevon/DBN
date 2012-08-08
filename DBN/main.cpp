@@ -31,15 +31,15 @@ int main (int argc, const char * argv[])
   
    //INIT RBM
    
-   GaussianLayer2 baselayer((int)data.train->size2);
+   GaussianLayer baselayer((int)data.train->size2);
    
-   baselayer.addLayer(200);
+   baselayer.addLayer(20);
    
    RBM rbm(&baselayer);
    
    //--------------
-   float learningrate = 0.005;
-   float weightcost = 0.0001;
+   float learningrate = 0.0005;
+   float weightcost = 0.00001;
    float k = 20;
    float sparsitytarget = 0.2;
    float decayrate = 0.9;
@@ -47,10 +47,11 @@ int main (int argc, const char * argv[])
    float batchsize = 1;
    
    CD cdLearner(learningrate, weightcost, k, sparsitytarget, decayrate, sparsitycost, &viz, batchsize);
+   cdLearner.inittemps(&rbm);
    
    rbm.bot->shapeInput(data.train);
    //LEARNING!!!!!!!!!
-   for (int epoch = 0; epoch < 100 ; ++epoch){
+   for (int epoch = 0; epoch < 1000 ; ++epoch){
       std::cout << std::endl << "Epoch " << epoch << std::endl;
       cdLearner.teach(&rbm, data.train);
       std::cout << "Reconstruction cost: " << rbm.reconstructionError_ << std::endl;

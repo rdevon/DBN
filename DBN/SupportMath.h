@@ -9,10 +9,11 @@
 #ifndef DBN_SupportMath_h
 #define DBN_SupportMath_h
 #include "gsl/gsl_vector.h"
-#include "math.h"
+#include <math.h>
 #include "Types.h"
 
 float sigmoid(float x);
 double softplus(double x);
 float gaussian(float x);
+float csoftmax(double x);
 #endif

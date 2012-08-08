@@ -20,3 +20,7 @@ double softplus(double x){
 float gaussian(float x){
    return (float)1/(2*PI)*expf(-pow(x, 2)/(float)2);
 }
+
+float csoftmax(double x){
+   return expf(x)/(expf(1)-1);
+}
