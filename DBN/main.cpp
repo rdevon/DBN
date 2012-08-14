@@ -25,36 +25,35 @@ int main (int argc, const char * argv[])
    DataSet data;
    data.loadfMRI();
    
-   Visualizer viz(&data);
-   
    //---------DONE INIT
   
    //INIT RBM
    
    GaussianLayer baselayer((int)data.train->size2);
+   SigmoidLayer hiddenlayer(50);
    
-   baselayer.addLayer(20);
-   
-   RBM rbm(&baselayer);
+   Connection c1(&baselayer, &hiddenlayer);
+
+   RBM rbm(&c1);
    
    //--------------
-   float learningrate = 0.0005;
-   float weightcost = 0.00001;
+   float learningrate = 0.001;
+   float weightcost = 0;
+   float momentum = 0;
    float k = 20;
-   float sparsitytarget = 0.2;
+   float sparsitytarget = 0.1;
    float decayrate = 0.9;
    float sparsitycost = 0;
    float batchsize = 1;
+
+   baselayer.shapeInput(data.train);
    
-   CD cdLearner(learningrate, weightcost, k, sparsitytarget, decayrate, sparsitycost, &viz, batchsize);
-   cdLearner.inittemps(&rbm);
-   
-   rbm.bot->shapeInput(data.train);
    //LEARNING!!!!!!!!!
-   for (int epoch = 0; epoch < 1000 ; ++epoch){
-      std::cout << std::endl << "Epoch " << epoch << std::endl;
-      cdLearner.teach(&rbm, data.train);
-      std::cout << "Reconstruction cost: " << rbm.reconstructionError_ << std::endl;
+   ContrastiveDivergence cdLearner(&rbm, &data, learningrate, weightcost, momentum, k, sparsitytarget, decayrate, sparsitycost, batchsize);
+   
+   for (int epoch = 1; epoch < 10; ++epoch){
+      std::cout << "Epoch " << epoch << std::endl;
+      cdLearner.run();
    }
    
    Visualizer samplerviz(&data, "RBMsamples");

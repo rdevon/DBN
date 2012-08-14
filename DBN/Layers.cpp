@@ -9,129 +9,133 @@
 #include <iostream>
 #include "Layers.h"
 
-Layer::Layer(int nodenum){
-   nodenum_ = nodenum;
-   batchsize_ = 1;      //Initialize to 1 but we'll redo these as the batchsize changes
-   
-   preactivations_ = gsl_matrix_float_calloc(nodenum_, batchsize_);
-   probabilities_ = gsl_matrix_float_calloc(nodenum_, batchsize_);
-   activations_ = gsl_matrix_float_calloc(nodenum_, batchsize_);
-   
-   up = NULL;
-   
-   weights_ = NULL;
-   weightsT_ = weights_;
-   batchbiases_ = gsl_matrix_float_alloc(nodenum_, batchsize_);
-   frozen = false;
-   on = true;
+Connection::Connection(Layer *bot, Layer *top) :  bot_(bot), top_(top) {
+   initializeWeights();
+   mat_update = gsl_matrix_float_calloc(top_->nodenum_, bot_->nodenum_);
+   stat1 = gsl_matrix_float_alloc(top_->nodenum_, bot_->nodenum_);
+   stat2 = gsl_matrix_float_alloc(top_->nodenum_, bot_->nodenum_);
 }
 
-void Layer::initializeWeights(){
+void Connection::update(ContrastiveDivergence* teacher){
+   
+   gsl_matrix_float *weight_update = mat_update;
+   
+   float learning_rate = teacher->learningRate_/((float)teacher->batchsize_*(float)teacher->batchsize_);
+   gsl_blas_sgemm(CblasNoTrans, CblasTrans , learning_rate, teacher->top_pos_stats_, teacher->bot_pos_stats_, teacher->momentum_, weight_update);
+   gsl_blas_sgemm(CblasNoTrans, CblasTrans , -learning_rate, teacher->top_neg_stats_, teacher->bot_neg_stats_, 1, weight_update);
+   
+   gsl_matrix_float_add(weights_, weight_update);
+   
+   top_->update(teacher);
+   bot_->update(teacher);
+}
+
+void Connection::initializeWeights(){
    
    // Set weights to initial normal distribution with 0 mean and 0.01 variance.  This is suggested by Hinton but different from tutorial which uses
    // initial uniform distribution between -+4 sqrt(6/(h_nodes+vnodes))
    
-   weights_ = gsl_matrix_float_alloc(up->nodenum_, nodenum_);
-   for (int i = 0; i < up->nodenum_; ++i)
-      for (int j = 0; j < nodenum_; ++j)
+   weights_ = gsl_matrix_float_alloc(top_->nodenum_, bot_->nodenum_);
+   for (int i = 0; i < top_->nodenum_; ++i)
+      for (int j = 0; j < bot_->nodenum_; ++j)
          gsl_matrix_float_set(weights_, i, j, (float)gsl_ran_gaussian(r, 0.01));
 }
 
-//Default is sigmoid
-void Layer::addLayer(int newnodes){
-   if (up==NULL){
-      up = new SigmoidLayer(newnodes);
-      initializeWeights();
+void Connection::prop(Up_flag_t up, Sample_flag_t s){
+   CBLAS_TRANSPOSE_t transFlag;
+   Layer *signal_layer;
+   Layer *layer;
+   gsl_matrix_float *signal;
+   if (up == UPFLAG){
+      layer = top_;
+      signal_layer = bot_;
+      transFlag = CblasNoTrans;
    }
-   else up->addLayer(newnodes);
+   else {
+      layer = bot_;
+      signal_layer = top_;
+      transFlag = CblasTrans;
+   }
+   
+   if (s == SAMPLE) signal = signal_layer->samples_;
+   else signal = signal_layer->expectations_;
+   
+   if (layer->frozen == false){
+      layer->expandBiases();
+      gsl_blas_sgemm(transFlag, CblasNoTrans, 1, weights_, signal, 1, layer->activations_);
+      gsl_matrix_float_add(layer->activations_, layer->batchbiases_);
+      layer->expectation_up_to_date = false;
+      layer->sample_up_to_date = false;
+      layer->learning_up_to_date = false;
+   }
 }
 
-void Layer::addLayer(Layer *newlayer){
-   if (up==NULL){
-      up = newlayer;
-      initializeWeights();
-   }
-   else up->addLayer(newlayer);
+void Connection::initprop(Up_flag_t up){
+   if (up == UPFLAG) gsl_matrix_float_set_all(top_->activations_, 0);
+   else gsl_matrix_float_set_all(bot_->activations_, 0);
 }
 
-Layer *Layer::getTop(){
-   if (up==NULL) return this;
-   else return up->getTop();
+void Connection::makeBatch(int batchsize) {
+   top_->makeBatch(batchsize);
+   bot_->makeBatch(batchsize);
+}
+
+void Connection::expandBiases(){
+   top_->expandBiases();
+   bot_->expandBiases();
+}
+
+void Activator::activate(){
+   c1_->initprop(up_flag_);
+   //c2_->initprop(up_flag_);
+   //c3_->initprop(up_flag_);
+   c1_->prop(up_flag_, s_flag_);
+   //c2_->prop(up_flag_);
+   //c3_->prop(up_flag_);
+}
+
+Layer::Layer(int nodenum) : nodenum_(nodenum), batchsize_(1), frozen(false), energy_(0) {
+   
+   activations_ = gsl_matrix_float_calloc(nodenum_, batchsize_);
+   expectations_ = gsl_matrix_float_calloc(nodenum_, batchsize_);
+   samples_ = gsl_matrix_float_calloc(nodenum_, batchsize_);
+   batchbiases_ = gsl_matrix_float_alloc(nodenum_, batchsize_);
+   
+   vec_update = gsl_vector_float_calloc(nodenum_);
+   mat_update = gsl_matrix_float_calloc(nodenum_, batchsize_);
+   stat1 = gsl_matrix_float_alloc(nodenum_, batchsize_);
+   stat2 = gsl_matrix_float_alloc(nodenum_, batchsize_);
+}
+
+void Layer::clear(){
+   frozen = false;
+   expectation_up_to_date = false;
+   sample_up_to_date = false;
+   makeBatch(1);
+   energy_ = 0;
 }
 
 void Layer::makeBatch(int batchsize){
    
-   //For batch processing.  
+   //For batch processing.
    gsl_matrix_float_free(activations_);
-   gsl_matrix_float_free(preactivations_);
-   gsl_matrix_float_free(probabilities_);
+   gsl_matrix_float_free(expectations_);
+   gsl_matrix_float_free(samples_);
    gsl_matrix_float_free(batchbiases_);
+   gsl_matrix_float_free(stat1);
+   gsl_matrix_float_free(stat2);
    
    batchsize_ = batchsize;
    
    activations_ = gsl_matrix_float_calloc(nodenum_, batchsize_);
-   preactivations_ = gsl_matrix_float_calloc(nodenum_, batchsize_);
-   probabilities_ = gsl_matrix_float_calloc(nodenum_, batchsize_);
+   expectations_ = gsl_matrix_float_calloc(nodenum_, batchsize_);
+   samples_ = gsl_matrix_float_calloc(nodenum_, batchsize_);
    batchbiases_ = gsl_matrix_float_calloc(nodenum_, batchsize_);
+   stat1 = gsl_matrix_float_calloc(nodenum_, batchsize_);
+   stat2 = gsl_matrix_float_calloc(nodenum_, batchsize_);
+   
 }
 
-void Layer::activate(Activation_flag_t act){
-   if (not(frozen) && on){
-      preactivator->preactivate(this);
-      
-      setProbs();
-      
-      //Sample if sample flag on
-      if (act == ACTIVATIONS){
-         for (int i = 0; i < nodenum_; ++i){
-            for (int j = 0; j < batchsize_; ++j){
-               float u = gsl_rng_uniform(r);
-               float act = (float)(gsl_matrix_float_get(probabilities_, i, j) > u);
-               gsl_matrix_float_set(activations_, i, j, act);
-            }
-         }
-      }
-      else gsl_matrix_float_memcpy(activations_, probabilities_);
-   }
-   if (not(on)) {
-      gsl_matrix_float_set_all(preactivations_, 0);
-      gsl_matrix_float_set_all(probabilities_, 0);
-      gsl_matrix_float_set_all(activations_, 0);
-   }
-}
-
-void PreActivator::preactivate(Layer *layer){
-   CBLAS_TRANSPOSE_t transFlag;
-   gsl_matrix_float *weights;
-   //Check up or down flag to set transpose flag
-   if (up_) transFlag = CblasNoTrans;
-   else transFlag = CblasTrans;
-   
-   if (sL1_->on){
-      //Expand the biases into a matrix for matrix operation
-      for (int j = 0; j < layer->batchsize_; ++j) gsl_matrix_float_set_col(layer->batchbiases_, j, layer->biases_);
-      
-      //Check flag for up or down activation
-      if (up_) weights = sL1_->weights_;
-      else weights = layer->weights_;
-      
-      //Compute x = W^T v + b or W v + b depending on up or down activation
-      
-      gsl_blas_sgemm(transFlag, CblasNoTrans, 1, weights, sL1_->activations_, 0, layer->preactivations_);
-      gsl_matrix_float_add(layer->preactivations_, layer->batchbiases_);
-   }
-   
-   // Add the other preactivations if they exist
-   if (sL2_ != NULL && sL2_->on){
-      if (up_) weights = sL2_->weights_;
-      gsl_blas_sgemm(transFlag, CblasNoTrans, 1, weights, sL2_->activations_, 1, layer->preactivations_);
-      gsl_matrix_float_add(layer->preactivations_, layer->batchbiases_);
-   }
-   
-   if (sL3_ != NULL && sL3_->on){
-      if (up_) weights = sL3_->weights_;
-      gsl_blas_sgemm(transFlag, CblasNoTrans, 1, weights, sL3_->activations_, 1, layer->preactivations_);
-      gsl_matrix_float_add(layer->preactivations_, layer->batchbiases_);
-   }
-   
+void Layer::expandBiases(){
+   for (int j = 0; j < batchsize_; ++j) gsl_matrix_float_set_col(batchbiases_, j, biases_);
 }

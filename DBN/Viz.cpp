@@ -480,7 +480,7 @@ void Visualizer::add(gsl_vector_float *sample){
       sample = data_->applyMask(sample);
    }
    
-   gsl_vector_float_scale(sample, 5);
+   gsl_vector_float_scale(sample, 1);
    
    int i = (count/across)*imageH;
    int j = count%across*imageW;
@@ -491,11 +491,7 @@ void Visualizer::add(gsl_vector_float *sample){
          float val = gsl_vector_float_get(sample, (jj+ii*imageW));
          gsl_matrix_float_set(viz, i+ii, j+jj, val);
       }
-   
-   
-   
-   
-   
+
    count = (count+1)%(across*down);
 }
 

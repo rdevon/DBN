@@ -8,17 +8,19 @@
 
 #include "Layers.h"
 
-void CSoftmaxLayer::setProbs(){
+void CSoftmaxLayer::getExpectations(){
    //Apply continuous softmax.
    for (int i = 0; i < nodenum_; ++i){
       for (int j = 0; j < batchsize_; ++j){
-         float mean = csoftmax(gsl_matrix_float_get(preactivations_, i, j));
-         gsl_matrix_float_set(probabilities_, i, j, mean);
+         float prob = csoftmax(gsl_matrix_float_get(activations_, i, j));
+         gsl_matrix_float_set(expectations_, i, j, prob);
       }
    }
 }
 
-void CSoftmaxLayer :: getFreeEnergy() {}
+float CSoftmaxLayer :: freeEnergy_contibution() {return 0;}
+
+void CSoftmaxLayer::sample(){}
 
 //This may seem superflurous, but it will be useful to have visitor function when there are multiple activation sources
 

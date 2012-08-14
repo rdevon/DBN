@@ -8,25 +8,49 @@
 
 
 #include "Layers.h"
-
-void SigmoidLayer::setProbs(){
+void SigmoidLayer::getExpectations(){
    //Apply sigmoid.  Might want to pass a general functor later
    for (int i = 0; i < nodenum_; ++i){
       for (int j = 0; j < batchsize_; ++j){
-         float sigprob = sigmoid(gsl_matrix_float_get(preactivations_, i, j));
-         gsl_matrix_float_set(probabilities_, i, j, sigprob);
+         float exp = sigmoid(gsl_matrix_float_get(activations_, i, j));
+         gsl_matrix_float_set(expectations_, i, j, exp);
       }
    }
 }
 
-void SigmoidLayer :: getFreeEnergy() {
-   if (up == NULL){
-      freeEnergy_ = 0;
-      return;
+void SigmoidLayer::sample(){
+   for (int i = 0; i < nodenum_; ++i){
+      for (int j = 0; j < batchsize_; ++j){
+         float u = gsl_rng_uniform(r);
+         float sample = (float)(gsl_matrix_float_get(expectations_, i, j) > u);
+         gsl_matrix_float_set(samples_, i, j, sample);
+      }
    }
-   
-   //Expand the sigmoid biases into a matrix for matrix operation
-   for (int j = 0; j < batchsize_; ++j) gsl_matrix_float_set_col(batchbiases_, j, biases_);
+}
+
+void SigmoidLayer::update(ContrastiveDivergence *teacher){
+   gsl_vector_float *bias_update = vec_update;
+   float learning_rate = teacher->learningRate_/(float)teacher->batchsize_;
+   gsl_blas_sgemv(CblasNoTrans, learning_rate, stat1, teacher->identity, teacher->momentum_, bias_update);
+   gsl_blas_sgemv(CblasNoTrans, -learning_rate, stat2, teacher->identity, 1, bias_update);
+   gsl_vector_float_add(biases_, bias_update);
+}
+
+float SigmoidLayer::reconstructionCost(gsl_matrix_float *dataMat, gsl_matrix_float *modelMat){
+   double RE = 0;
+   for (int i = 0; i < nodenum_; ++i){
+      for (int j = 0; j < batchsize_; ++j){
+         double dataAct = gsl_matrix_float_get(dataMat, i, j);
+         double modelAct = gsl_matrix_float_get(modelMat, i, j);
+         RE += dataAct * log(modelAct) + (1-dataAct)*log(1- modelAct);
+         //std::cout << RE << " " << dataAct << " " << modelAct << std::endl;
+      }
+   }
+   return (float)RE/(float)batchsize_;
+}
+
+float SigmoidLayer :: freeEnergy_contibution() {
+   /*expandBiases();
    
    //Computing x = W v + b
    gsl_matrix_float *x_j = gsl_matrix_float_alloc(up->nodenum_, up->batchsize_);
@@ -59,8 +83,8 @@ void SigmoidLayer :: getFreeEnergy() {
    gsl_vector_float_free(vBiasTerm);
    gsl_vector_float_free(hterm);
    gsl_matrix_float_free(x_j);
-   gsl_vector_float_free(identity);
-   
+   gsl_vector_float_free(identity);*/
+   return 0;
 }
 
 //The input needs to be shaped depending on the type of visible layer.

@@ -9,63 +9,95 @@
 #include <iostream>
 #include "RBM.h"
 
-RBM::RBM(Layer* layer) : bot(layer), top(layer->up), reconstructionError_(0){}
-
+RBM::RBM(Connection* c1) : c1_(c1), reconstructionCost_(0) {
+   up_act_ = new Activator(UPFLAG, c1_);
+   down_act_ = new Activator(DOWNFLAG, c1_);
+}
 
 void RBM::getFreeEnergy(){
-   bot->getFreeEnergy();
-   freeEnergy_ = bot->freeEnergy_;
 }
 
-void RBM::gibbs_HV(Activation_flag_t act){
-   top->activate(act);
-   bot->activate(act);
+void RBM::gibbs_HV(){
+   up_act_->activate();
+   c1_->top_->getExpectations();
+   c1_->top_->sample();
+   
+   down_act_->activate();
+   c1_->bot_->getExpectations();
+   c1_->bot_->sample();
 }
 
-void RBM::gibbs_VH(Activation_flag_t act){
-   bot->activate(act);
-   top->activate(act);
+void RBM::gibbs_VH(){
+   down_act_->activate();
+   c1_->bot_->getExpectations();
+   c1_->bot_->sample();
+   
+   up_act_->activate();
+   c1_->top_->getExpectations();
+   c1_->top_->sample();
 }
 
-void RBM::getReconstructionError(Input_t *input){
+void RBM::makeBatch(int batchsize){
+   c1_->makeBatch(batchsize);
+}
+
+void RBM::expandBiases(){
+   c1_->expandBiases();
+}
+
+void RBM::get_dims(float *topdim, float *botdim){
+   *topdim = c1_->top_->nodenum_;
+   *botdim = c1_->bot_->nodenum_;
+}
+
+void RBM::update(ContrastiveDivergence *cd){
+   c1_->update(cd);
+}
+
+void RBM::getReconstructionCost(Input_t *input){
+   float oldbatch = c1_->bot_->batchsize_;
+   Layer *bot = c1_->bot_;
+   
    //Make batch over entire input for matrix ops
-   top->makeBatch((int)input->size1);
-   bot->makeBatch((int)input->size1);
+   makeBatch((int)input->size1);
    
-   top->preactivator = new PreActivator(UPFLAG, bot);
-   bot->preactivator = new PreActivator(DOWNFLAG, top);
+   //Enter the entire input as the activations and means.  for some reason gsl_matrix_transpose_memcopy isn't working here.
+   gsl_matrix_float *dataMat = gsl_matrix_float_calloc(input->size2, input->size1);
+   gsl_matrix_float *modelMat;
    
-   std::cout << std::endl << "Calculating Reconstruction Error" << std::endl;
-   double RE = 0;
-   
-   //Enter the entire input as the activations and means
-   gsl_matrix_float *dataMat = gsl_matrix_float_alloc(input->size2, input->size1), *modelMat;
    gsl_matrix_float_transpose_memcpy(dataMat, input);
-   gsl_matrix_float_memcpy(bot->activations_, dataMat);
-   gsl_matrix_float_memcpy(bot->probabilities_, dataMat);
+   
+   gsl_matrix_float_memcpy(bot->samples_, dataMat);
+   gsl_matrix_float_memcpy(bot->expectations_, dataMat);
+   
+   up_act_->s_flag_ = NOSAMPLE;
+   down_act_->s_flag_ = NOSAMPLE;
    
    //gibbs once over the whole matrix
-   gibbs_HV(PROBABILITIES);
+   gibbs_HV();
    
-   modelMat = bot->activations_;
+   modelMat = bot->expectations_;
    
-   //Hmmmm worth doing batches?  Dunno.  Since I have to go through by hand and modify every entry.  Maybe the compiler can handle this
-   for (int i = 0; i < bot->nodenum_; ++i){
-      for (int j = 0; j < bot->batchsize_; ++j){
-         double dataAct = gsl_matrix_float_get(dataMat, i, j);
-         double modelAct = gsl_matrix_float_get(modelMat, i, j);
-         RE += dataAct * log(modelAct) + (1-dataAct)*log(1- modelAct); //Cost really.
-         //if ((modelAct >=1)||(modelAct <= 0))std::cout << (1-dataAct)*log(1- modelAct) << " " << dataAct * log(modelAct) << " " << dataAct << " " << modelAct << std::endl;
-      }
-   }
-   reconstructionError_ = (float)RE/(float)input->size1;
+   // calculate the reconstruction cost as per the visible layer type
+   reconstructionCost_ = bot->reconstructionCost(dataMat, modelMat);
+   
+   std::cout << "Reconstruction cost: " << reconstructionCost_ << std::endl;
+   
    gsl_matrix_float_free(dataMat);
+   
+   // Revert to the old batchsize.
+   makeBatch(oldbatch);
 }
 
 void RBM::sample(DataSet *data, Visualizer *viz){
+   Layer *top = c1_->top_;
+   Layer *bot = c1_->bot_;
    gsl_matrix_float *input;
    if (data->test == NULL) input = data->train;
    else input = data->test;
+   
+   up_act_->s_flag_ = NOSAMPLE;
+   down_act_->s_flag_ = NOSAMPLE;
    
    std::cout << "Sampling RBM" << std::endl;
    
@@ -78,15 +110,15 @@ void RBM::sample(DataSet *data, Visualizer *viz){
    for (int j = 0; j < viz->across*viz->down; ++j){ // As many samples as will fit in the viz.
       int u = (int)gsl_rng_uniform_int(r, input->size1);
       gsl_matrix_float_get_row(samples, input, u);
-      gsl_matrix_float_set_col(bot->activations_, j, samples);
-      gsl_matrix_float_set_col(bot->probabilities_, j, samples);
+      gsl_matrix_float_set_col(bot->samples_, j, samples);
+      gsl_matrix_float_set_col(bot->expectations_, j, samples);
    }
-      
+   
    for (int epoch = 0; epoch < 1000; ++epoch) {
-      gibbs_HV(PROBABILITIES);
+      gibbs_HV();
    }
    for (int j = 0; j < viz->across*viz->down; ++j){
-      gsl_matrix_float_get_col(samples, bot->activations_, j);
+      gsl_matrix_float_get_col(samples, bot->samples_, j);
       viz->add(samples);
    }
    

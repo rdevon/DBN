@@ -27,6 +27,6 @@ typedef enum{DOWNFLAG, UPFLAG} Up_flag_t;
 
 typedef enum{} Input_flag_t;
 
-typedef enum{ACTIVATIONS, PROBABILITIES} Activation_flag_t;
+typedef enum{SAMPLE, NOSAMPLE} Sample_flag_t;
 
 #endif
