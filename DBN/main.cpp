@@ -15,6 +15,9 @@
 int main (int argc, const char * argv[])
 {
    //--------------RNG INIT STUFF
+   
+   srand((unsigned)time(0));
+   
    long seed;
    r = gsl_rng_alloc (gsl_rng_rand48);     // pick random number generator
    seed = time (NULL) * getpid();
@@ -30,17 +33,17 @@ int main (int argc, const char * argv[])
    //INIT RBM
    
    GaussianLayer baselayer((int)data.train->size2);
-   SigmoidLayer hiddenlayer(50);
+   SigmoidLayer hiddenlayer(20);
    
    Connection c1(&baselayer, &hiddenlayer);
 
    RBM rbm(&c1);
    
    //--------------
-   float learningrate = 0.001;
+   float learningrate = 0.01;
    float weightcost = 0;
    float momentum = 0;
-   float k = 20;
+   float k = 1;
    float sparsitytarget = 0.1;
    float decayrate = 0.9;
    float sparsitycost = 0;
@@ -51,12 +54,12 @@ int main (int argc, const char * argv[])
    //LEARNING!!!!!!!!!
    ContrastiveDivergence cdLearner(&rbm, &data, learningrate, weightcost, momentum, k, sparsitytarget, decayrate, sparsitycost, batchsize);
    
-   for (int epoch = 1; epoch < 10; ++epoch){
+   for (int epoch = 1; epoch < 100; ++epoch){
       std::cout << "Epoch " << epoch << std::endl;
       cdLearner.run();
    }
    
-   Visualizer samplerviz(&data, "RBMsamples");
+   Visualizer samplerviz(20, &data, "RBMsamples");
    
    rbm.sample(&data, &samplerviz);
   

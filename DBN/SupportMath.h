@@ -16,4 +16,6 @@ float sigmoid(float x);
 double softplus(double x);
 float gaussian(float x);
 float csoftmax(double x);
+
+float sampleNormalDist(float mu, float sigma);
 #endif

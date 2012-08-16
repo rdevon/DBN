@@ -480,6 +480,7 @@ void Visualizer::add(gsl_vector_float *sample){
       sample = data_->applyMask(sample);
    }
    
+   
    gsl_vector_float_scale(sample, 1);
    
    int i = (count/across)*imageH;

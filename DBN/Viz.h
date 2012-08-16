@@ -31,12 +31,11 @@ public:
    DataSet *data_;
    
    Visualizer(){}
-   Visualizer(DataSet *data, std::string newname = ""): count(0) {
+   Visualizer(int maxsamples, DataSet *data, std::string newname = ""): count(0) {
       data_ = data;
       if (newname == "") name = data->name;
       else name = newname;
       int pixelWidth = 300;
-      int maxsamples = 20;
       //number of samples across and down
       across = pixelWidth/(data->width);
       down = maxsamples / across;

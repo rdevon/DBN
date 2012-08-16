@@ -20,7 +20,9 @@ ContrastiveDivergence::ContrastiveDivergence(RBM *rbm, DataSet *data, float lear
    identity = gsl_vector_float_alloc(batchsize_);
    gsl_vector_float_set_all(identity, 1);
    forvizvec = gsl_vector_float_alloc(rbm_->c1_->bot_->nodenum_);
-   viz_ = new Visualizer(data_);
+   viz_ = new Visualizer(rbm_->c1_->top_->nodenum_ ,data_);
+   // Make batch over batch size for matrix ops
+   rbm_->makeBatch(batchsize_);
 }
 
 void ContrastiveDivergence::getStats(gsl_matrix_float *input_batch){
@@ -58,9 +60,6 @@ void ContrastiveDivergence::getStats(gsl_matrix_float *input_batch){
 }
 
 void ContrastiveDivergence::run(){
-   
-   // Make batch over batch size for matrix ops
-   rbm_->makeBatch(batchsize_);
    gsl_matrix_float *input = data_->train;
    gsl_ran_shuffle(r, input->data, input->size1, input->size2 * sizeof(float));
    
@@ -83,14 +82,14 @@ void ContrastiveDivergence::run(){
       // And monitor
       if ((i*batchsize_)%(input->size1/100) == 0) monitor(i*batchsize_);
    }
-   rbm_->getReconstructionCost(input);
+   //rbm_->getReconstructionCost(input);
 }
 
 void ContrastiveDivergence::monitor(int i){
-   std::cout << i << " ";
+   //std::cout << i << " ";
    viz_->clear();
-   viz_->add(rbm_->c1_->bot_->vec_update2);
-   for (int j = 0; j<viz_->across*viz_->down - 1; ++j) {
+   //viz_->add(rbm_->c1_->bot_->vec_update2);
+   for (int j = 0; j<viz_->across*viz_->down; ++j) {
       /*gsl_matrix_float_get_row(forvizvec, data_->train, j);
       viz_->add(forvizvec); */     ///Uncomment these if you want to see the input vectors
       gsl_matrix_float_get_row(forvizvec, rbm_->c1_->weights_, j);

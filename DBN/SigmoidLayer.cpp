@@ -29,11 +29,7 @@ void SigmoidLayer::sample(){
 }
 
 void SigmoidLayer::update(ContrastiveDivergence *teacher){
-   gsl_vector_float *bias_update = vec_update;
-   float learning_rate = teacher->learningRate_/(float)teacher->batchsize_;
-   gsl_blas_sgemv(CblasNoTrans, learning_rate, stat1, teacher->identity, teacher->momentum_, bias_update);
-   gsl_blas_sgemv(CblasNoTrans, -learning_rate, stat2, teacher->identity, 1, bias_update);
-   gsl_vector_float_add(biases_, bias_update);
+   Layer::update(teacher);
 }
 
 float SigmoidLayer::reconstructionCost(gsl_matrix_float *dataMat, gsl_matrix_float *modelMat){

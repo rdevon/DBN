@@ -8,7 +8,7 @@
 
 #ifndef DBN_RBM_h
 #define DBN_RBM_h
-#include "Layers.h"
+#include "Connections.h"
 #include "SupportFunctions.h"
 #include "Viz.h"
 

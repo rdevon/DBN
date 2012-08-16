@@ -24,3 +24,11 @@ float gaussian(float x){
 float csoftmax(double x){
    return expf(x)/(expf(1)-1);
 }
+
+float sampleNormalDist(float mu, float sigma){
+   float u = (float)rand()/(float)RAND_MAX;
+   float v = (float)rand()/(float)RAND_MAX;
+   float x = sqrt(-(float)2*log(u))*cos((float)2*PI*v);
+   float sample = sigma * x + mu;
+   return sample;
+}

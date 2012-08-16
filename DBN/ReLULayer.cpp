@@ -12,11 +12,30 @@ void ReLULayer::getExpectations(){
    //Apply softplus.  Might want to pass a general functor later
    for (int i = 0; i < nodenum_; ++i){
       for (int j = 0; j < batchsize_; ++j){
-         float preact = gsl_matrix_float_get(activations_, i, j);
-         float prob = softplus(preact);
+         float act = gsl_matrix_float_get(activations_, i, j);
+         float prob;
+         if (act < 100) prob = softplus(act);
+         else prob = act;
          gsl_matrix_float_set(expectations_, i, j, prob);
       }
    }
+}
+
+void ReLULayer::sample(){
+   // Sample = max(0, x+N(0,sigmoid(x)))
+   for (int i = 0; i < nodenum_; ++i){
+      for (int j = 0; j < batchsize_; ++j){
+         float exp = gsl_matrix_float_get(expectations_, i, j);
+         float sam = fmaxf(0, exp + 0*gsl_ran_gaussian(r, sigmoid(exp)));
+         gsl_matrix_float_set(samples_, i, j, sam);
+      }
+   }
+   //print_gsl(expectations_);
+   
+}
+
+void ReLULayer::update(ContrastiveDivergence *teacher){
+   Layer::update(teacher);
 }
 
 float ReLULayer :: freeEnergy_contibution() {
