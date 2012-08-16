@@ -14,8 +14,9 @@ void ReLULayer::getExpectations(){
       for (int j = 0; j < batchsize_; ++j){
          float act = gsl_matrix_float_get(activations_, i, j);
          float prob;
-         if (act < 100) prob = softplus(act);
-         else prob = act;
+         //if (act < 100)
+            prob = softplus(act);
+         //else prob = act;
          gsl_matrix_float_set(expectations_, i, j, prob);
       }
    }
@@ -26,7 +27,7 @@ void ReLULayer::sample(){
    for (int i = 0; i < nodenum_; ++i){
       for (int j = 0; j < batchsize_; ++j){
          float exp = gsl_matrix_float_get(expectations_, i, j);
-         float sam = fmaxf(0, exp + 0*gsl_ran_gaussian(r, sigmoid(exp)));
+         float sam = fmaxf(0, exp + gsl_ran_gaussian(r, sigmoid(exp)));
          gsl_matrix_float_set(samples_, i, j, sam);
       }
    }

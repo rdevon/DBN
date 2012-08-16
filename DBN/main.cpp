@@ -33,14 +33,14 @@ int main (int argc, const char * argv[])
    //INIT RBM
    
    GaussianLayer baselayer((int)data.train->size2);
-   SigmoidLayer hiddenlayer(20);
+   ReLULayer hiddenlayer(20);
    
    Connection c1(&baselayer, &hiddenlayer);
 
    RBM rbm(&c1);
    
    //--------------
-   float learningrate = 0.01;
+   float learningrate = 0.0001;
    float weightcost = 0;
    float momentum = 0;
    float k = 1;

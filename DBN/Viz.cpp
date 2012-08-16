@@ -481,7 +481,7 @@ void Visualizer::add(gsl_vector_float *sample){
    }
    
    
-   gsl_vector_float_scale(sample, 1);
+   gsl_vector_float_scale(sample, 5);
    
    int i = (count/across)*imageH;
    int j = count%across*imageW;
