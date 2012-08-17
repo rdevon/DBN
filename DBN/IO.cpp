@@ -72,6 +72,8 @@ void DataSet::loadMNIST(){
    
    fclose(file_handle);
    
+   applymask = false;
+   
    std::cout << "Done loading" << std::endl;
    
 }
@@ -128,6 +130,11 @@ void DataSet::loadfMRI(){
    
    removeMeanImage();
    removeMask();
+   
+   applymask = true;
+   
+   extra = gsl_matrix_float_alloc(train->size1, train->size2);
+   gsl_matrix_float_memcpy(extra, train); //This is for time courses since I don't preserve data order in training.
 }
 
 

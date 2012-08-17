@@ -15,6 +15,7 @@
 		005D2A2A15ACE25D007D675F /* DBN.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 005D2A2915ACE25D007D675F /* DBN.1 */; };
 		005DA21B15DC2703001384D0 /* Connections.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 005DA21915DC2703001384D0 /* Connections.cpp */; };
 		005DA21F15DD6718001384D0 /* GradientDescent.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 005DA21D15DD6717001384D0 /* GradientDescent.cpp */; };
+		0084D75315DDB7F60003BA78 /* Timecourses.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0084D75115DDB7F50003BA78 /* Timecourses.cpp */; };
 		008E1DA615BDEB8100E14290 /* IO.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 008E1DA515BDEB8000E14290 /* IO.cpp */; };
 		00A89FAA15D5C15E00159C58 /* Teacher.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00A89FA815D5C15E00159C58 /* Teacher.cpp */; };
 		00BACCD115D0386B000D52EB /* GaussianLayer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00BACCCF15D0386B000D52EB /* GaussianLayer.cpp */; };
@@ -55,6 +56,8 @@
 		005DA21A15DC2703001384D0 /* Connections.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Connections.h; sourceTree = "<group>"; };
 		005DA21D15DD6717001384D0 /* GradientDescent.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GradientDescent.cpp; sourceTree = "<group>"; };
 		005DA21E15DD6717001384D0 /* GradientDescent.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GradientDescent.h; sourceTree = "<group>"; };
+		0084D75115DDB7F50003BA78 /* Timecourses.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Timecourses.cpp; sourceTree = "<group>"; };
+		0084D75215DDB7F50003BA78 /* Timecourses.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Timecourses.h; sourceTree = "<group>"; };
 		008E1DA315BDCD6000E14290 /* Viz.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Viz.h; sourceTree = "<group>"; };
 		008E1DA415BDE99300E14290 /* IO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IO.h; sourceTree = "<group>"; };
 		008E1DA515BDEB8000E14290 /* IO.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = IO.cpp; sourceTree = "<group>"; };
@@ -115,6 +118,8 @@
 				00E9CF9915BF5E8100BFA559 /* Viz.cpp */,
 				008E1DA415BDE99300E14290 /* IO.h */,
 				008E1DA515BDEB8000E14290 /* IO.cpp */,
+				0084D75215DDB7F50003BA78 /* Timecourses.h */,
+				0084D75115DDB7F50003BA78 /* Timecourses.cpp */,
 				00A89FA915D5C15E00159C58 /* Teacher.h */,
 				00A89FA815D5C15E00159C58 /* Teacher.cpp */,
 				00F7665215B86AC400D1364E /* RBM.h */,
@@ -200,6 +205,7 @@
 				00A89FAA15D5C15E00159C58 /* Teacher.cpp in Sources */,
 				005DA21B15DC2703001384D0 /* Connections.cpp in Sources */,
 				005DA21F15DD6718001384D0 /* GradientDescent.cpp in Sources */,
+				0084D75315DDB7F60003BA78 /* Timecourses.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

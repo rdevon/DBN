@@ -11,6 +11,7 @@
 #include "Viz.h"
 #include "IO.h"
 #include "Types.h"
+#include "Timecourses.h"
 
 int main (int argc, const char * argv[])
 {
@@ -59,9 +60,11 @@ int main (int argc, const char * argv[])
       cdLearner.run();
    }
    
-   Visualizer samplerviz(20, &data, "RBMsamples");
+   get_timecourses(&rbm, &data);
    
-   rbm.sample(&data, &samplerviz);
+   //Visualizer samplerviz(20, &data, "RBMsamples");
+   
+   //rbm.sample(&data, &samplerviz);
   
    
 //   terminate(EXIT_SUCCESS);

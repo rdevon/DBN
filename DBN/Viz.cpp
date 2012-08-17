@@ -476,7 +476,7 @@ int update(double time)
 void Visualizer::add(gsl_vector_float *sample){
    
    
-   if (data_->mask_ != NULL){
+   if (data_->applymask){
       sample = data_->applyMask(sample);
    }
    
