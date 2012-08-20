@@ -84,7 +84,8 @@ float SigmoidLayer :: freeEnergy_contibution() {
 }
 
 //The input needs to be shaped depending on the type of visible layer.
-void SigmoidLayer::shapeInput(Input_t* input){
+void SigmoidLayer::shapeInput(DataSet *data){
+   Input_t *input = data->train;
    float min, max;
    gsl_matrix_float_minmax(input, &min, &max);
    gsl_matrix_float_add_constant(input, -min);

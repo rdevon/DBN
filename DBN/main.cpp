@@ -34,30 +34,31 @@ int main (int argc, const char * argv[])
    //INIT RBM
    
    GaussianLayer baselayer((int)data.train->size2);
-   ReLULayer hiddenlayer(20);
+   ReLULayer hiddenlayer(12);
    
    Connection c1(&baselayer, &hiddenlayer);
 
    RBM rbm(&c1);
    
    //--------------
-   float learningrate = 0.0001;
-   float weightcost = 0;
-   float momentum = 0;
+   float learningrate = 0.00001;
+   float weightcost = 0.0002;
+   float momentum = 0.7;
    float k = 1;
    float sparsitytarget = 0.1;
    float decayrate = 0.9;
    float sparsitycost = 0;
    float batchsize = 1;
 
-   baselayer.shapeInput(data.train);
+   baselayer.shapeInput(&data);
    
    //LEARNING!!!!!!!!!
    ContrastiveDivergence cdLearner(&rbm, &data, learningrate, weightcost, momentum, k, sparsitytarget, decayrate, sparsitycost, batchsize);
    
-   for (int epoch = 1; epoch < 100; ++epoch){
+   for (int epoch = 1; epoch < 200; ++epoch){
       std::cout << "Epoch " << epoch << std::endl;
       cdLearner.run();
+      //cdLearner.learningRate_ *= .95;
    }
    
    get_timecourses(&rbm, &data);

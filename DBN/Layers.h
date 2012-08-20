@@ -41,6 +41,7 @@ public:
    gsl_matrix_float *activations_;                 // The literal unit activations.
    gsl_matrix_float *samples_;                     // These are for the binary units specifically, but might be needed for others.  The sigmoid function is
    gsl_matrix_float *expectations_;                // The statistical mean of the samples.  These are good when doing less noisy analysis (see activation flags)
+   gsl_vector_float *m_factor_;                    // A multiplicative factor for signals (this is for gaussian layers especially)
    
    gsl_vector_float *biases_;                      // Biases
    gsl_matrix_float *batchbiases_;                 // For batch processing
@@ -60,7 +61,7 @@ public:
    virtual void makeBatch(int batchsize);          // Changes all of the unit matrices into matrices of size
                                                    // nodenum_ x batchsize_
    void expandBiases();                            // The biases are vectors, but it's nice to have matrix versions as well.
-   virtual void shapeInput(Input_t* input) = 0;    // Depending on the type of layer you need to shape the input.  Should be useful in DBNS as well.
+   virtual void shapeInput(DataSet* data) = 0;    // Depending on the type of layer you need to shape the input.  Should be useful in DBNS as well.
    
    // Energy Functions-------------
    virtual float reconstructionCost(gsl_matrix_float *dataMat, gsl_matrix_float *modelMat) = 0;
@@ -85,7 +86,7 @@ public:
    
    void sample();
    void getExpectations();
-   void shapeInput(Input_t* input);
+   void shapeInput(DataSet *data);
    
    float reconstructionCost(gsl_matrix_float *dataMat, gsl_matrix_float *modelMat);
    void getEnergy(){}
@@ -106,7 +107,7 @@ public:
    
    void sample();
    void getExpectations();
-   void shapeInput(Input_t* input);
+   void shapeInput(DataSet* data);
    
    float reconstructionCost(gsl_matrix_float *dataMat, gsl_matrix_float *modelMat){return 0;}
    void getEnergy(){}
@@ -127,7 +128,7 @@ public:
    
    void sample();
    void getExpectations();
-   void shapeInput(Input_t* input);
+   void shapeInput(DataSet *data);
    
    float reconstructionCost(gsl_matrix_float *dataMat, gsl_matrix_float *modelMat){return 0;}
    void getEnergy(){}
@@ -153,7 +154,7 @@ public:
    void sample();
    void getExpectations();
    void getSigmas();
-   void shapeInput(Input_t* input);
+   void shapeInput(DataSet *data);
    
    void makeBatch(int batchsize);
    

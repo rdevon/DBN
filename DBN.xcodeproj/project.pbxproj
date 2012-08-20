@@ -168,6 +168,9 @@
 /* Begin PBXProject section */
 		005D2A1A15ACE25D007D675F /* Project object */ = {
 			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0440;
+			};
 			buildConfigurationList = 005D2A1D15ACE25D007D675F /* Build configuration list for PBXProject "DBN" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;

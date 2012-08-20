@@ -76,6 +76,7 @@ void DataSet::loadMNIST(){
    
    std::cout << "Done loading" << std::endl;
    
+   denorm = false;
 }
 
 void DataSet::loadfMRI(){

@@ -13,8 +13,7 @@
 
 class ObjectiveFunction{
 public:
-   float operator() (float arg){}
-
+   float operator() (float arg){return 0;}
 };
 
 

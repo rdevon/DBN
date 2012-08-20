@@ -23,9 +23,11 @@ public:
    Input_t *train, *test, *validation, *extra;
    
    bool applymask;
+   bool denorm;
    
    gsl_vector_float *meanImage_;
    gsl_vector_float *mask_;
+   gsl_vector_float *norm_;
    
    DataSet(){
       masksize_ = 0;

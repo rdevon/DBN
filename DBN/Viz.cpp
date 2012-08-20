@@ -475,13 +475,21 @@ int update(double time)
 
 void Visualizer::add(gsl_vector_float *sample){
    
+   /*if (data_->denorm) {
+      gsl_vector_float_mul(sample, data_->norm_);
+   }*/
+   
+   gsl_vector_float_scale(sample, 8);
+   
+   for (int i = 0; i < sample->size; ++i){
+      if (gsl_vector_float_get(sample, i) < .2)
+         gsl_vector_float_set(sample, i, -10);
+   }
    
    if (data_->applymask){
       sample = data_->applyMask(sample);
    }
    
-   
-   gsl_vector_float_scale(sample, 5);
    
    int i = (count/across)*imageH;
    int j = count%across*imageW;
@@ -489,7 +497,9 @@ void Visualizer::add(gsl_vector_float *sample){
    for (int ii = 0; ii < imageH; ++ii)
       for (int jj = 0; jj < imageW; ++jj)
       {
-         float val = gsl_vector_float_get(sample, (jj+ii*imageW));
+         float val;
+         if (ii == 0 || ii == imageH || jj == 0 || jj == imageW) val = .2;
+         else val = gsl_vector_float_get(sample, (jj+ii*imageW));
          gsl_matrix_float_set(viz, i+ii, j+jj, val);
       }
 

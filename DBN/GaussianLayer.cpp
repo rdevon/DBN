@@ -10,17 +10,18 @@
 #include "Layers.h"
 
 GaussianLayer::GaussianLayer(int n) : Layer(n) {
-   setsigma = 1;
    biases_ = gsl_vector_float_calloc(nodenum_);
+   vec_update2 = gsl_vector_float_calloc(nodenum_);
+   stat3 = gsl_matrix_float_alloc(nodenum_, batchsize_);
+   stat4 = gsl_matrix_float_alloc(nodenum_, batchsize_);
+   setsigma = 1;
    for (int i = 0; i < nodenum_; ++i)
       gsl_vector_float_set(biases_, i, (float)gsl_ran_gaussian(r, 0.01));
    quad_coefficients = gsl_vector_float_alloc(nodenum_);
    gsl_vector_float_set_all(quad_coefficients, (float)1/sqrtf(2));
    sigmas = gsl_vector_float_alloc(nodenum_);
    gsl_vector_float_set_all(sigmas, 1);
-   vec_update2 = gsl_vector_float_calloc(nodenum_);
-   stat3 = gsl_matrix_float_alloc(nodenum_, batchsize_);
-   stat4 = gsl_matrix_float_alloc(nodenum_, batchsize_);
+   sigmas = m_factor_;
 }
 
 void GaussianLayer::makeBatch(int batchsize){
@@ -31,10 +32,8 @@ void GaussianLayer::makeBatch(int batchsize){
 
 void GaussianLayer::getExpectations(){
    for (int i = 0; i < nodenum_; ++i){
-      float sigma = gsl_vector_float_get(sigmas, i);
-      float quad = gsl_vector_float_get(quad_coefficients, i);
       for (int j = 0; j < batchsize_; ++j){
-         float expectation = gsl_matrix_float_get(activations_, i, j)/(sigma*sigma);
+         float expectation = gsl_matrix_float_get(activations_, i, j);
          gsl_matrix_float_set(expectations_, i, j, expectation);
       }
    }
@@ -52,8 +51,7 @@ void GaussianLayer::sample(){
       float sigma = gsl_vector_float_get(sigmas, i);
       for (int j = 0; j < batchsize_; ++j) {
          float exp = (sigma*sigma)*gsl_matrix_float_get(expectations_, i, j);
-         float sam = exp + gsl_ran_gaussian(r, sigma);
-         //float sam = gsl_ran_gaussian(exp, sigma);
+         float sam = (exp + gsl_ran_gaussian(r, sigma));
          gsl_matrix_float_set(samples_, i, j, sam);
       }
    }
@@ -61,7 +59,7 @@ void GaussianLayer::sample(){
 
 void GaussianLayer::update(ContrastiveDivergence *teacher){
    Layer::update(teacher);
-   if (setsigma <= 0){
+   /*if (0){
       float learning_rate = teacher->learningRate_/(float)(teacher->batchsize_*teacher->batchsize_);
       
       gsl_vector_float *quad_update_pos = gsl_vector_float_alloc(nodenum_);
@@ -92,12 +90,15 @@ void GaussianLayer::update(ContrastiveDivergence *teacher){
       
       gsl_vector_float_free(quad_update_neg);
       gsl_vector_float_free(quad_update_pos);
-   }
+   }*/
 }
 
-void GaussianLayer::shapeInput(Input_t* input){
+void GaussianLayer::shapeInput(DataSet *data){
+   Input_t *input = data->train;
+   gsl_vector_float *col = gsl_vector_float_alloc(input->size1);
    if (setsigma > 0) {
-      gsl_vector_float *col = gsl_vector_float_alloc(input->size1);
+      data->norm_ = gsl_vector_float_alloc(data->train->size2);
+      data->denorm = true;
       for (int j = 0; j < input->size2; ++j) {
          gsl_matrix_float_get_col(col, input, j);
          float mean = gsl_stats_float_mean(col->data, col->stride, col->size);
@@ -105,8 +106,15 @@ void GaussianLayer::shapeInput(Input_t* input){
          gsl_vector_float_add_constant(col, -mean);
          gsl_vector_float_scale(col, setsigma/sd);
          gsl_matrix_float_set_col(input, j, col);
+         gsl_vector_float_set(data->norm_, j, sd);
       }
-      gsl_vector_float_free(col);
    }
+   else {
+      data->denorm = false;
+      for (int j = 0; j < input->size2; ++j) {
+         float sd = gsl_stats_float_sd(col->data, col->stride, col->size);
+         gsl_vector_float_set(sigmas, j, sd);
+      }
+   }
+   gsl_vector_float_free(col);
 }
-

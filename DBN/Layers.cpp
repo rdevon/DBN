@@ -17,6 +17,9 @@ Layer::Layer(int nodenum) : nodenum_(nodenum), batchsize_(1), frozen(false), ene
    samples_ = gsl_matrix_float_calloc(nodenum_, batchsize_);
    batchbiases_ = gsl_matrix_float_alloc(nodenum_, batchsize_);
    
+   m_factor_ = gsl_vector_float_alloc(nodenum_);
+   gsl_vector_float_set_all(m_factor_, 1);
+   
    vec_update = gsl_vector_float_calloc(nodenum_);
    mat_update = gsl_matrix_float_calloc(nodenum_, batchsize_);
    stat1 = gsl_matrix_float_alloc(nodenum_, batchsize_);

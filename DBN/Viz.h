@@ -23,7 +23,7 @@ class Visualizer{
 public:
    
    std::string name;
-   
+   float thresh_;
    int count, across, down;
    int imageW, imageH; 
    gsl_matrix_float *viz;
@@ -31,14 +31,16 @@ public:
    DataSet *data_;
    
    Visualizer(){}
-   Visualizer(int maxsamples, DataSet *data, std::string newname = ""): count(0) {
+   Visualizer(int minsamples, DataSet *data, std::string newname = ""): count(0) {
       data_ = data;
       if (newname == "") name = data->name;
       else name = newname;
-      int pixelWidth = 300;
+      int pixelWidth = 150;
       //number of samples across and down
       across = pixelWidth/(data->width);
-      down = maxsamples / across;
+      down = ceilf((float)minsamples/(float)across);
+      //across = 3;
+      //down = 6;
       imageH = data->height;
       imageW = data->width;
       viz = gsl_matrix_float_calloc(imageH*down, imageW*across);

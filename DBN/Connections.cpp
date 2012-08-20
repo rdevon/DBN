@@ -24,6 +24,12 @@ void Connection::update(ContrastiveDivergence* teacher){
    gsl_blas_sgemm(CblasNoTrans, CblasTrans , learning_rate, teacher->top_pos_stats_, teacher->bot_pos_stats_, teacher->momentum_, weight_update);
    gsl_blas_sgemm(CblasNoTrans, CblasTrans , -learning_rate, teacher->top_neg_stats_, teacher->bot_neg_stats_, 1, weight_update);
    
+   gsl_matrix_float *weightdecay = gsl_matrix_float_alloc(weights_->size1, weights_->size2);
+   gsl_matrix_float_memcpy(weightdecay, weights_);
+   gsl_matrix_float_scale(weightdecay, teacher->weightcost_);
+   //gsl_matrix_float_scale(weightdecay, teacher->learningRate_);
+   gsl_matrix_float_sub(weight_update, weightdecay);
+   
    gsl_matrix_float_add(weights_, weight_update);
    
    top_->update(teacher);
@@ -59,6 +65,9 @@ void Connection::prop(Up_flag_t up, Sample_flag_t s){
    
    if (s == SAMPLE) signal = signal_layer->samples_;
    else signal = signal_layer->expectations_;
+   
+   gsl_matrix_float *eff_weights = gsl_matrix_float_alloc(weights_->size1, weights_->size2);
+   
    
    if (layer->frozen == false){
       layer->expandBiases();
