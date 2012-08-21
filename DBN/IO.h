@@ -20,7 +20,7 @@ class DataSet{
 public:
    std::string name;
    int height, width, number, masksize_;
-   Input_t *train, *test, *validation, *extra, *stim;
+   Input_t *train, *test, *validation, *extra;
    
    bool applymask;
    bool denorm;

@@ -30,12 +30,11 @@ public:
    gsl_vector_float *identity, *forvizvec;
    
    Visualizer *viz_;
-   DataSet *data_;
    RBM *rbm_;
    
    ~ContrastiveDivergence(){}
    ContrastiveDivergence(){}
-   ContrastiveDivergence(RBM *rbm, DataSet *data, float learningRate, float weightcost, float momentum, int k, float p, float lambda, float sparsitycost, int batchsize);
+   ContrastiveDivergence(RBM *rbm, float learningRate, float weightcost, float momentum, int k, float p, float lambda, float sparsitycost, int batchsize);
    
    void getStats();
    void run();

@@ -21,6 +21,9 @@ public:
    Activator *up_act_;
    Activator *down_act_;
    
+   DataSet *ds1_;
+   DataSet *ds2_;
+   
    ~RBM(){}
    RBM(){}
    RBM(Connection*);
@@ -43,6 +46,10 @@ public:
       if (c2_ != NULL) c2_->catch_stats(s);
       
    }
+   
+   void load_DS(DataSet*, DataSet*);
+   void load_input_batch(int index);
+   void init_DS();
 };
 
 

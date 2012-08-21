@@ -151,3 +151,42 @@ void RBM::sample(DataSet *data, Visualizer *viz){
    gsl_vector_float_free(samples);
 }
 
+void RBM::load_DS(DataSet *ds1, DataSet *ds2 = NULL){
+   ds1_ = ds1;
+   ds2_ = ds2;
+   c1_->bot_->shapeInput(ds1_);
+   if (c2_ != NULL) c2_->bot_->shapeInput(ds2_);
+}
+
+void RBM::load_input_batch(int index){
+   gsl_matrix_float *ds1 = ds1_->train;
+   int batchsize = c1_->bot_->batchsize_;
+   
+   // Make a batch of the input and perform CD
+   gsl_matrix_float_view inputbatch1 = gsl_matrix_float_submatrix(ds1, index, 0, batchsize, ds1->size2);
+   
+   // Copy the input batch onto the samples of the visible layer
+   gsl_matrix_float_transpose_memcpy(c1_->bot_->samples_, &(inputbatch1.matrix));
+   
+   if (ds2_ != NULL){
+      gsl_matrix_float *ds2 = ds2_->train;
+      gsl_matrix_float_view inputbatch2 = gsl_matrix_float_submatrix(ds2, index, 0, batchsize, ds2->size2);
+      gsl_matrix_float_transpose_memcpy(c2_->bot_->samples_, &(inputbatch2.matrix));
+   }
+}
+
+void RBM::init_DS(){
+   gsl_matrix_float *ds1 = ds1_->train;
+   
+   gsl_rng *r_temp = gsl_rng_alloc(gsl_rng_rand48);
+   gsl_rng_memcpy(r_temp, r);
+   
+   gsl_ran_shuffle(r_temp, ds1->data, ds1->size1, ds1->size2*sizeof(float));
+   
+   if (ds2_ != NULL) {
+      gsl_matrix_float *ds2 = ds2_->train;
+      gsl_ran_shuffle(r, ds2->data, ds2->size1, ds2->size2*sizeof(float));
+   }
+   
+   gsl_rng_free(r_temp);
+}

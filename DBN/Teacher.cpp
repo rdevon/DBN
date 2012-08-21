@@ -10,13 +10,12 @@
 #include "RBM.h"
 #include "Viz.h"
 
-ContrastiveDivergence::ContrastiveDivergence(RBM *rbm, DataSet *data, float learningRate, float weightcost, float momentum, int k, float p, float lambda, float sparsitycost, int batchsize) : rbm_(rbm), data_(data), learningRate_(learningRate), weightcost_(weightcost), momentum_(momentum), k_(k), p_(p), lambda_(lambda), sparsitycost_(sparsitycost), batchsize_(batchsize)
+ContrastiveDivergence::ContrastiveDivergence(RBM *rbm, float learningRate, float weightcost, float momentum, int k, float p, float lambda, float sparsitycost, int batchsize) : rbm_(rbm), learningRate_(learningRate), weightcost_(weightcost), momentum_(momentum), k_(k), p_(p), lambda_(lambda), sparsitycost_(sparsitycost), batchsize_(batchsize)
 {
-   
    identity = gsl_vector_float_alloc(batchsize_);
    gsl_vector_float_set_all(identity, 1);
    forvizvec = gsl_vector_float_alloc(rbm_->c1_->bot_->nodenum_);
-   viz_ = new Visualizer(rbm_->c1_->top_->nodenum_ ,data_);
+   viz_ = new Visualizer(rbm_->c1_->top_->nodenum_ ,rbm_->ds1_);
    // Make batch over batch size for matrix ops
    rbm_->makeBatch(batchsize_);
 }
@@ -44,17 +43,6 @@ void ContrastiveDivergence::run(){
    // Turn the sample flags on
    rbm_->up_act_->s_flag_ = SAMPLE;
    rbm_->down_act_->s_flag_ = SAMPLE;
-   Layer *bot = rbm_->c1_->bot_;
-   Layer *bot2 = rbm_->c2_->bot_;
-   gsl_matrix_float *input = data_->train;
-   gsl_matrix_float *stim = data_->stim;
-   
-   gsl_rng *r_temp = gsl_rng_alloc(gsl_rng_rand48);
-   gsl_rng_memcpy(r_temp, r);
-   
-   gsl_ran_shuffle(r_temp, input->data, input->size1, input->size2*sizeof(float));
-   gsl_ran_shuffle(r, stim->data, stim->size1, stim->size2*sizeof(float));
-   gsl_rng_free(r_temp);
    
    // Get dimensions
    float topdim, botdim;
@@ -62,16 +50,12 @@ void ContrastiveDivergence::run(){
    
    std::cout << "Teaching RBM with input" << std::endl << "RBM dimensions: " << botdim << "x" << topdim << std::endl << "Learning rate: " << learningRate_ << std::endl << "K: " << k_ << std::endl << "Batch Size: " << batchsize_ << std::endl;
    
+   rbm_->init_DS();
+   
    // Loop through the input
-   for(int i = 0; i < (input->size1)/batchsize_; ++i){
+   for(int i = 0; i < (rbm_->ds1_->train->size1)/batchsize_; ++i){
       
-      // Make a batch of the input and perform CD
-      gsl_matrix_float_view inputbatch = gsl_matrix_float_submatrix(input, i, 0, batchsize_, input->size2);
-      gsl_matrix_float_view stimbatch = gsl_matrix_float_submatrix(stim, i, 0, batchsize_, stim->size2);
-      
-      // Copy the input batch onto the samples of the visible layer
-      gsl_matrix_float_transpose_memcpy(bot->samples_, &(inputbatch.matrix));
-      gsl_matrix_float_transpose_memcpy(bot2->samples_, &(stimbatch.matrix));
+      rbm_->load_input_batch(i);
       
       getStats();
       
@@ -79,7 +63,7 @@ void ContrastiveDivergence::run(){
       rbm_->update(this);
       
       // And monitor
-      if ((i*batchsize_)%(input->size1/100) == 0) monitor(i*batchsize_);
+      if ((i*batchsize_)%(rbm_->ds1_->train->size1/100) == 0) monitor(i*batchsize_);
    }
    //rbm_->getReconstructionCost(input);
 }

@@ -26,14 +26,15 @@ int main (int argc, const char * argv[])
    //--------------
    //LOAD DATASET and INIT
    
-   DataSet data;
-   data.loadfMRI();
+   DataSet data1,data2;
+   data1.loadfMRI();
+   data2.loadSPM();
    //---------DONE INIT
    
    //INIT RBM
    
-   GaussianLayer baselayer((int)data.train->size2);
-   GaussianLayer stimuluslayer((int)data.stim->size2);
+   GaussianLayer baselayer((int)data1.train->size2);
+   GaussianLayer stimuluslayer((int)data2.train->size2);
    ReLULayer hiddenlayer(16);
    
    
@@ -41,6 +42,8 @@ int main (int argc, const char * argv[])
    Connection c2(&stimuluslayer, &hiddenlayer);
 
    RBM rbm(&c1, &c2);
+   
+   rbm.load_DS(&data1, &data2);
    
    //--------------
    float learningrate = 0.00001;
@@ -52,11 +55,10 @@ int main (int argc, const char * argv[])
    float sparsitycost = 0;
    float batchsize = 1;
 
-   baselayer.shapeInput(&data);
-   stimuluslayer.shapeInput(&data);
+   
    
    //LEARNING!!!!!!!!!
-   ContrastiveDivergence cdLearner(&rbm, &data, learningrate, weightcost, momentum, k, sparsitytarget, decayrate, sparsitycost, batchsize);
+   ContrastiveDivergence cdLearner(&rbm, learningrate, weightcost, momentum, k, sparsitytarget, decayrate, sparsitycost, batchsize);
    
    for (int epoch = 1; epoch < 200; ++epoch){
       std::cout << "Epoch " << epoch << std::endl;
@@ -64,7 +66,7 @@ int main (int argc, const char * argv[])
       //cdLearner.learningRate_ *= .95;
    }
    
-   get_timecourses(&rbm, &data);
+   get_timecourses(&rbm, &data1);
    
    //Visualizer samplerviz(20, &data, "RBMsamples");
    
