@@ -28,17 +28,19 @@ int main (int argc, const char * argv[])
    
    DataSet data;
    data.loadfMRI();
-   
    //---------DONE INIT
-  
+   
    //INIT RBM
    
    GaussianLayer baselayer((int)data.train->size2);
-   ReLULayer hiddenlayer(12);
+   GaussianLayer stimuluslayer((int)data.stim->size2);
+   ReLULayer hiddenlayer(16);
+   
    
    Connection c1(&baselayer, &hiddenlayer);
+   Connection c2(&stimuluslayer, &hiddenlayer);
 
-   RBM rbm(&c1);
+   RBM rbm(&c1, &c2);
    
    //--------------
    float learningrate = 0.00001;
@@ -51,6 +53,7 @@ int main (int argc, const char * argv[])
    float batchsize = 1;
 
    baselayer.shapeInput(&data);
+   stimuluslayer.shapeInput(&data);
    
    //LEARNING!!!!!!!!!
    ContrastiveDivergence cdLearner(&rbm, &data, learningrate, weightcost, momentum, k, sparsitytarget, decayrate, sparsitycost, batchsize);

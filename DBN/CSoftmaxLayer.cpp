@@ -22,8 +22,6 @@ float CSoftmaxLayer :: freeEnergy_contibution() {return 0;}
 
 void CSoftmaxLayer::sample(){}
 
-//This may seem superflurous, but it will be useful to have visitor function when there are multiple activation sources
-
 //The input needs to be shaped depending on the type of visible layer.
 void CSoftmaxLayer::shapeInput(DataSet *data){
    Input_t *input = data->train;

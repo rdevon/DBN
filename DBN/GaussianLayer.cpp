@@ -31,6 +31,7 @@ void GaussianLayer::makeBatch(int batchsize){
 }
 
 void GaussianLayer::getExpectations(){
+   if (expectation_up_to_date) return;
    for (int i = 0; i < nodenum_; ++i){
       for (int j = 0; j < batchsize_; ++j){
          float expectation = gsl_matrix_float_get(activations_, i, j);
@@ -47,6 +48,7 @@ void GaussianLayer::getSigmas(){
 }
 
 void GaussianLayer::sample(){
+   if (sample_up_to_date) return;
    for (int i = 0; i < nodenum_; ++i) {
       float sigma = gsl_vector_float_get(sigmas, i);
       for (int j = 0; j < batchsize_; ++j) {
@@ -58,6 +60,7 @@ void GaussianLayer::sample(){
 }
 
 void GaussianLayer::update(ContrastiveDivergence *teacher){
+   if (learning_up_to_date) return;
    Layer::update(teacher);
    /*if (0){
       float learning_rate = teacher->learningRate_/(float)(teacher->batchsize_*teacher->batchsize_);

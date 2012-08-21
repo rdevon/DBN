@@ -9,6 +9,7 @@
 #include "Layers.h"
 
 void ReLULayer::getExpectations(){
+   if (expectation_up_to_date) return;
    //Apply softplus.  Might want to pass a general functor later
    for (int i = 0; i < nodenum_; ++i){
       for (int j = 0; j < batchsize_; ++j){
@@ -23,6 +24,7 @@ void ReLULayer::getExpectations(){
 }
 
 void ReLULayer::sample(){
+   if (sample_up_to_date) return;
    // Sample = max(0, x+N(0,sigmoid(x)))
    for (int i = 0; i < nodenum_; ++i){
       for (int j = 0; j < batchsize_; ++j){
@@ -36,6 +38,7 @@ void ReLULayer::sample(){
 }
 
 void ReLULayer::update(ContrastiveDivergence *teacher){
+   if (learning_up_to_date) return;
    Layer::update(teacher);
 }
 

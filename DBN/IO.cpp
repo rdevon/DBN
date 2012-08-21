@@ -136,6 +136,35 @@ void DataSet::loadfMRI(){
    
    extra = gsl_matrix_float_alloc(train->size1, train->size2);
    gsl_matrix_float_memcpy(extra, train); //This is for time courses since I don't preserve data order in training.
+   
+   loadSPM();
+}
+
+void DataSet::loadSPM(){
+   stim = gsl_matrix_float_alloc(number, 2);
+   std::cout << "Loading stimulus" << std::endl;
+   
+   std::string filename, pathname;
+   std::ifstream file;
+   
+   int sample = 0;
+   
+   pathname = SPMpath + "SPM.dat";
+   
+   file.open(pathname.c_str());
+   
+   std::string line;
+   while (getline(file, line)){
+      float value;
+      int index = 1;
+      std::istringstream iss(line);
+      while (iss >> value) {
+         if (index == 3 || index == 4) gsl_matrix_float_set(stim, sample, index-3, value);
+         ++index;
+      }
+      ++sample;
+   }
+   file.close();
 }
 
 

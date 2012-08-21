@@ -9,9 +9,14 @@
 #include <iostream>
 #include "RBM.h"
 
-RBM::RBM(Connection* c1) : c1_(c1), reconstructionCost_(0) {
+RBM::RBM(Connection* c1) : c1_(c1), c2_(NULL), reconstructionCost_(0) {
    up_act_ = new Activator(UPFLAG, c1_);
    down_act_ = new Activator(DOWNFLAG, c1_);
+}
+
+RBM::RBM(Connection* c1, Connection* c2) : c1_(c1), c2_(c2), reconstructionCost_(0){
+   up_act_ = new Activator(UPFLAG, c1_, c2_);
+   down_act_ = new Activator(DOWNFLAG, c1_, c2_);
 }
 
 void RBM::getFreeEnergy(){
@@ -21,28 +26,47 @@ void RBM::gibbs_HV(){
    up_act_->activate();
    c1_->top_->getExpectations();
    c1_->top_->sample();
+   if (c2_ != NULL){
+      c2_->top_->getExpectations();
+      c2_->top_->sample();
+   }
    
    down_act_->activate();
    c1_->bot_->getExpectations();
    c1_->bot_->sample();
+   if (c2_ != NULL){
+      c2_->bot_->getExpectations();
+      c2_->bot_->sample();
+   }
+   
 }
 
 void RBM::gibbs_VH(){
    down_act_->activate();
    c1_->bot_->getExpectations();
    c1_->bot_->sample();
+   if (c2_ != NULL){
+      c2_->bot_->getExpectations();
+      c2_->bot_->sample();
+   }
    
    up_act_->activate();
    c1_->top_->getExpectations();
    c1_->top_->sample();
+   if (c2_ != NULL){
+      c2_->top_->getExpectations();
+      c2_->top_->sample();
+   }
 }
 
 void RBM::makeBatch(int batchsize){
    c1_->makeBatch(batchsize);
+   c2_->makeBatch(batchsize);
 }
 
 void RBM::expandBiases(){
    c1_->expandBiases();
+   c2_->expandBiases();
 }
 
 void RBM::get_dims(float *topdim, float *botdim){
@@ -52,6 +76,7 @@ void RBM::get_dims(float *topdim, float *botdim){
 
 void RBM::update(ContrastiveDivergence *cd){
    c1_->update(cd);
+   c2_->update(cd);
 }
 
 void RBM::getReconstructionCost(Input_t *input){

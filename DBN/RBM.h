@@ -17,13 +17,14 @@ class ContrastiveDivergence;
 class RBM {
 public:
    float freeEnergy_, reconstructionCost_;
-   Connection *c1_;
+   Connection *c1_, *c2_;
    Activator *up_act_;
    Activator *down_act_;
    
    ~RBM(){}
    RBM(){}
    RBM(Connection*);
+   RBM(Connection*, Connection*);
    
    void getFreeEnergy();
    void gibbs_HV();
@@ -36,6 +37,12 @@ public:
    void get_dims(float *topdim, float *botdim);
    
    void update(ContrastiveDivergence*);
+   
+   void catch_stats(Stat_flag_t s){
+      c1_->catch_stats(s);
+      if (c2_ != NULL) c2_->catch_stats(s);
+      
+   }
 };
 
 

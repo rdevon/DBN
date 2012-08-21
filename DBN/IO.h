@@ -20,7 +20,7 @@ class DataSet{
 public:
    std::string name;
    int height, width, number, masksize_;
-   Input_t *train, *test, *validation, *extra;
+   Input_t *train, *test, *validation, *extra, *stim;
    
    bool applymask;
    bool denorm;
@@ -37,6 +37,7 @@ public:
    
    void loadMNIST();
    void loadfMRI();
+   void loadSPM();
    void splitValidate(float percentage = .1);
    void removeMeanImage();
    void getMask();

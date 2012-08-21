@@ -66,3 +66,11 @@ void Layer::update(ContrastiveDivergence *teacher){
    gsl_blas_sgemv(CblasNoTrans, -learning_rate, stat2, teacher->identity, 1, bias_update);
    gsl_vector_float_add(biases_, bias_update);
 }
+
+void Layer::catch_stats(Stat_flag_t stat, Sample_flag_t sample){
+   gsl_matrix_float *s;
+   if (sample == SAMPLE) s = samples_;
+   else s = expectations_;
+   if (stat == POS) gsl_matrix_float_memcpy(stat1, s);
+   else gsl_matrix_float_memcpy(stat2, s);
+}

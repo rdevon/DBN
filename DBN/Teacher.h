@@ -27,8 +27,6 @@ class ContrastiveDivergence : public Teacher {
 public:
    float learningRate_, weightcost_, momentum_, sparsitycost_, p_, lambda_;
    int k_, batchsize_;
-   
-   gsl_matrix_float *top_neg_stats_, *top_pos_stats_, *bot_neg_stats_, *bot_pos_stats_;
    gsl_vector_float *identity, *forvizvec;
    
    Visualizer *viz_;
@@ -39,7 +37,7 @@ public:
    ContrastiveDivergence(){}
    ContrastiveDivergence(RBM *rbm, DataSet *data, float learningRate, float weightcost, float momentum, int k, float p, float lambda, float sparsitycost, int batchsize);
    
-   void getStats(gsl_matrix_float *input_batch);
+   void getStats();
    void run();
    void monitor(int i);
 };

@@ -41,6 +41,7 @@ public:
    
    void makeBatch(int batchsize);
    void expandBiases();
+   void catch_stats(Stat_flag_t s);
 };
 
 /////////////////////////////////////

@@ -35,7 +35,7 @@ public:
       data_ = data;
       if (newname == "") name = data->name;
       else name = newname;
-      int pixelWidth = 150;
+      int pixelWidth = 250;
       //number of samples across and down
       across = pixelWidth/(data->width);
       down = ceilf((float)minsamples/(float)across);

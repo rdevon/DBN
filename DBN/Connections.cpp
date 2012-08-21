@@ -11,8 +11,6 @@
 Connection::Connection(Layer *bot, Layer *top) :  bot_(bot), top_(top) {
    initializeWeights();
    mat_update = gsl_matrix_float_calloc(top_->nodenum_, bot_->nodenum_);
-   stat1 = gsl_matrix_float_alloc(top_->nodenum_, bot_->nodenum_);
-   stat2 = gsl_matrix_float_alloc(top_->nodenum_, bot_->nodenum_);
 }
 
 void Connection::update(ContrastiveDivergence* teacher){
@@ -21,13 +19,12 @@ void Connection::update(ContrastiveDivergence* teacher){
    
    float learning_rate = teacher->learningRate_/((float)teacher->batchsize_);
    //learning_rate/=(float)teacher->batchsize_;
-   gsl_blas_sgemm(CblasNoTrans, CblasTrans , learning_rate, teacher->top_pos_stats_, teacher->bot_pos_stats_, teacher->momentum_, weight_update);
-   gsl_blas_sgemm(CblasNoTrans, CblasTrans , -learning_rate, teacher->top_neg_stats_, teacher->bot_neg_stats_, 1, weight_update);
+   gsl_blas_sgemm(CblasNoTrans, CblasTrans , learning_rate, stat1, stat2, teacher->momentum_, weight_update);
+   gsl_blas_sgemm(CblasNoTrans, CblasTrans , -learning_rate, stat3, stat4, 1, weight_update);
    
    gsl_matrix_float *weightdecay = gsl_matrix_float_alloc(weights_->size1, weights_->size2);
    gsl_matrix_float_memcpy(weightdecay, weights_);
    gsl_matrix_float_scale(weightdecay, teacher->weightcost_);
-   //gsl_matrix_float_scale(weightdecay, teacher->learningRate_);
    gsl_matrix_float_sub(weight_update, weightdecay);
    
    gsl_matrix_float_add(weights_, weight_update);
@@ -66,7 +63,7 @@ void Connection::prop(Up_flag_t up, Sample_flag_t s){
    if (s == SAMPLE) signal = signal_layer->samples_;
    else signal = signal_layer->expectations_;
    
-   gsl_matrix_float *eff_weights = gsl_matrix_float_alloc(weights_->size1, weights_->size2);
+   //gsl_matrix_float *eff_weights = gsl_matrix_float_alloc(weights_->size1, weights_->size2);
    
    
    if (layer->frozen == false){
@@ -94,11 +91,21 @@ void Connection::expandBiases(){
    bot_->expandBiases();
 }
 
+void Connection::catch_stats(Stat_flag_t s){
+   stat1 = top_->stat1;
+   stat2 = bot_->stat1;
+   stat3 = top_->stat2;
+   stat4 = bot_->stat2;
+   bot_->catch_stats(s, SAMPLE);
+   if (s == NEG) top_->catch_stats(s, NOSAMPLE);
+   else top_->catch_stats(s, SAMPLE);
+}
+
 void Activator::activate(){
    c1_->initprop(up_flag_);
-   //c2_->initprop(up_flag_);
+   if (c2_ != NULL) c2_->initprop(up_flag_);
    //c3_->initprop(up_flag_);
    c1_->prop(up_flag_, s_flag_);
-   //c2_->prop(up_flag_);
+   if (c2_ != NULL) c2_->prop(up_flag_, s_flag_);
    //c3_->prop(up_flag_);
 }

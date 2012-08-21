@@ -9,6 +9,7 @@
 
 #include "Layers.h"
 void SigmoidLayer::getExpectations(){
+   if (expectation_up_to_date) return;
    //Apply sigmoid.  Might want to pass a general functor later
    for (int i = 0; i < nodenum_; ++i){
       for (int j = 0; j < batchsize_; ++j){
@@ -16,9 +17,11 @@ void SigmoidLayer::getExpectations(){
          gsl_matrix_float_set(expectations_, i, j, exp);
       }
    }
+   expectation_up_to_date = true;
 }
 
 void SigmoidLayer::sample(){
+   if (sample_up_to_date) return;
    for (int i = 0; i < nodenum_; ++i){
       for (int j = 0; j < batchsize_; ++j){
          float u = gsl_rng_uniform(r);
@@ -26,9 +29,11 @@ void SigmoidLayer::sample(){
          gsl_matrix_float_set(samples_, i, j, sample);
       }
    }
+   sample_up_to_date = true;
 }
 
 void SigmoidLayer::update(ContrastiveDivergence *teacher){
+   if (learning_up_to_date) return;
    Layer::update(teacher);
 }
 

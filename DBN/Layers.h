@@ -69,6 +69,7 @@ public:
    virtual float freeEnergy_contibution() = 0;
    
    // Update Functions-------------
+   void catch_stats(Stat_flag_t, Sample_flag_t);
    virtual void update(ContrastiveDivergence*);
 };
 

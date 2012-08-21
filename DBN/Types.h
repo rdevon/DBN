@@ -18,6 +18,7 @@
 extern std::string MNISTpath;
 extern std::string plotpath;
 extern std::string fMRIpath;
+extern std::string SPMpath;
 extern gsl_rng * r;
 
 
@@ -28,5 +29,7 @@ typedef enum{DOWNFLAG, UPFLAG} Up_flag_t;
 typedef enum{} Input_flag_t;
 
 typedef enum{SAMPLE, NOSAMPLE} Sample_flag_t;
+
+typedef enum{NEG, POS} Stat_flag_t;
 
 #endif
