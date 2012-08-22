@@ -50,6 +50,7 @@ public:
    void load_DS(DataSet*, DataSet*);
    void load_input_batch(int index);
    void init_DS();
+   void visualize(float st1, float st2);
 };
 
 

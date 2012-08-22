@@ -55,23 +55,22 @@ void ContrastiveDivergence::run(){
    // Loop through the input
    for(int i = 0; i < (rbm_->ds1_->train->size1)/batchsize_; ++i){
       
+      // Loads the input batches into each base layer
       rbm_->load_input_batch(i);
       
+      // Gets statistics by performing CD.
       getStats();
       
       // Update the parameters.
       rbm_->update(this);
       
       // And monitor
-      if ((i*batchsize_)%(rbm_->ds1_->train->size1/100) == 0) monitor(i*batchsize_);
+      if ((i*batchsize_)%(rbm_->ds1_->train->size1/10) == 0) monitor(i*batchsize_);
    }
-   //rbm_->getReconstructionCost(input);
 }
 
 void ContrastiveDivergence::monitor(int i){
-   //std::cout << i << " ";
    viz_->clear();
-   //viz_->add(rbm_->c1_->bot_->vec_update2);
    for (int j = 0; j<rbm_->c1_->weights_->size1; ++j) {
       /*gsl_matrix_float_get_row(forvizvec, data_->train, j);
       viz_->add(forvizvec); */     ///Uncomment these if you want to see the input vectors

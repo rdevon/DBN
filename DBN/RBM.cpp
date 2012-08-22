@@ -190,3 +190,22 @@ void RBM::init_DS(){
    
    gsl_rng_free(r_temp);
 }
+
+void RBM::visualize(float st1, float st2){
+   Visualizer viz(1, ds1_);
+   makeBatch(1);
+   gsl_matrix_float_set(c2_->bot_->samples_, 0, 0, st1);
+   gsl_matrix_float_set(c2_->bot_->samples_, 1, 0, st2);
+   c2_->bot_->frozen = true;
+   gsl_matrix_float_set_all(c1_->bot_->samples_, 0);
+   
+   gsl_vector_float *for_viz = gsl_vector_float_calloc(c1_->bot_->nodenum_);
+   while (1){
+      viz.clear();
+      gibbs_HV();
+      gsl_matrix_float_get_col(for_viz, c1_->bot_->samples_, 0);
+      viz.add(for_viz);
+      viz.updateViz();
+   }
+   gsl_vector_float_free(for_viz);
+}

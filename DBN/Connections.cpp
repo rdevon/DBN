@@ -31,6 +31,8 @@ void Connection::update(ContrastiveDivergence* teacher){
    
    top_->update(teacher);
    bot_->update(teacher);
+   
+   gsl_matrix_float_free(weightdecay);
 }
 
 void Connection::initializeWeights(){

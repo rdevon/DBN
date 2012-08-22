@@ -37,7 +37,6 @@ int main (int argc, const char * argv[])
    GaussianLayer stimuluslayer((int)data2.train->size2);
    ReLULayer hiddenlayer(16);
    
-   
    Connection c1(&baselayer, &hiddenlayer);
    Connection c2(&stimuluslayer, &hiddenlayer);
 
@@ -46,16 +45,14 @@ int main (int argc, const char * argv[])
    rbm.load_DS(&data1, &data2);
    
    //--------------
-   float learningrate = 0.00001;
+   float learningrate = 0.000008;
    float weightcost = 0.0002;
-   float momentum = 0.7;
+   float momentum = 0.6;
    float k = 1;
    float sparsitytarget = 0.1;
    float decayrate = 0.9;
    float sparsitycost = 0;
    float batchsize = 1;
-
-   
    
    //LEARNING!!!!!!!!!
    ContrastiveDivergence cdLearner(&rbm, learningrate, weightcost, momentum, k, sparsitytarget, decayrate, sparsitycost, batchsize);
@@ -68,22 +65,7 @@ int main (int argc, const char * argv[])
    
    get_timecourses(&rbm, &data1);
    
-   //Visualizer samplerviz(20, &data, "RBMsamples");
-   
-   //rbm.sample(&data, &samplerviz);
-  
-   
-//   terminate(EXIT_SUCCESS);
-   
-   /*
-   Visualizer visualizer(&data); 
-   gsl_vector_float *sample = gsl_vector_float_alloc(data.train->size2);
-   for (int i = 0; i < 43; ++i){
-      gsl_matrix_float_get_row(sample, data.train, i);
-      visualizer.add(sample);
-   }
-   visualizer.plot();
-   */
+   //rbm.visualize(1, -1);
     
    
    return 0; 

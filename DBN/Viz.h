@@ -53,6 +53,7 @@ public:
    
    void initViz();
    void updateViz();
+   void close_window();
 };
 
 //GL STUFF HERE

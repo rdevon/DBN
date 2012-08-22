@@ -229,5 +229,6 @@ gsl_vector_float *DataSet::applyMask(gsl_vector_float *v){
          ++iprime;
       }
    }
+   gsl_vector_float_free(newv);
    return newv;
 }

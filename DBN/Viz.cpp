@@ -576,3 +576,7 @@ void Visualizer::updateViz(){
 
    update(glfwGetTime());
 }
+
+void Visualizer::close_window(){
+   GLFWCALL close();
+}

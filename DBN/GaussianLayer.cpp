@@ -26,6 +26,8 @@ GaussianLayer::GaussianLayer(int n) : Layer(n) {
 
 void GaussianLayer::makeBatch(int batchsize){
    Layer::makeBatch(batchsize);
+   gsl_matrix_float_free(stat3);
+   gsl_matrix_float_free(stat4);
    stat3 = gsl_matrix_float_calloc(nodenum_, batchsize_);
    stat4 = gsl_matrix_float_calloc(nodenum_, batchsize_);
 }
