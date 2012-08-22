@@ -8,7 +8,7 @@
 
 #include "Connections.h"
 
-Connection::Connection(Layer *bot, Layer *top) :  bot_(bot), top_(top) {
+Connection::Connection(Layer *bot, Layer *top) : Learner(), bot_(bot), top_(top) {
    initializeWeights();
    mat_update = gsl_matrix_float_calloc(top_->nodenum_, bot_->nodenum_);
 }
@@ -24,7 +24,7 @@ void Connection::update(ContrastiveDivergence* teacher){
    
    gsl_matrix_float *weightdecay = gsl_matrix_float_alloc(weights_->size1, weights_->size2);
    gsl_matrix_float_memcpy(weightdecay, weights_);
-   gsl_matrix_float_scale(weightdecay, teacher->weightcost_);
+   gsl_matrix_float_scale(weightdecay, decay_);
    gsl_matrix_float_sub(weight_update, weightdecay);
    
    gsl_matrix_float_add(weights_, weight_update);
@@ -75,6 +75,11 @@ void Connection::prop(Up_flag_t up, Sample_flag_t s){
       layer->expectation_up_to_date = false;
       layer->sample_up_to_date = false;
       layer->learning_up_to_date = false;
+   }
+   else {
+      layer->expectation_up_to_date = true;
+      layer->sample_up_to_date = true;
+      layer->learning_up_to_date = true;
    }
 }
 

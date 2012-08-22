@@ -10,7 +10,7 @@
 #include "Layers.h"
 
 
-Layer::Layer(int nodenum) : nodenum_(nodenum), batchsize_(1), frozen(false), energy_(0) {
+Layer::Layer(int nodenum) : Learner(), nodenum_(nodenum), batchsize_(1), frozen(false), energy_(0) {
    
    activations_ = gsl_matrix_float_calloc(nodenum_, batchsize_);
    expectations_ = gsl_matrix_float_calloc(nodenum_, batchsize_);
@@ -64,7 +64,12 @@ void Layer::update(ContrastiveDivergence *teacher){
    float learning_rate = teacher->learningRate_/(float)teacher->batchsize_;
    gsl_blas_sgemv(CblasNoTrans, learning_rate, stat1, teacher->identity, teacher->momentum_, bias_update);
    gsl_blas_sgemv(CblasNoTrans, -learning_rate, stat2, teacher->identity, 1, bias_update);
+   gsl_vector_float *decay = gsl_vector_float_alloc(nodenum_);
+   gsl_vector_float_memcpy(decay, biases_);
+   gsl_vector_float_scale(decay, decay_);
    gsl_vector_float_add(biases_, bias_update);
+   gsl_vector_float_sub(biases_, decay);
+   gsl_vector_float_free(decay);
 }
 
 void Layer::catch_stats(Stat_flag_t stat, Sample_flag_t sample){

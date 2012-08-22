@@ -155,7 +155,7 @@ void RBM::load_DS(DataSet *ds1, DataSet *ds2 = NULL){
    ds1_ = ds1;
    ds2_ = ds2;
    c1_->bot_->shapeInput(ds1_);
-   if (c2_ != NULL) c2_->bot_->shapeInput(ds2_);
+   //if (c2_ != NULL) c2_->bot_->shapeInput(ds2_);
 }
 
 void RBM::load_input_batch(int index){
@@ -192,7 +192,7 @@ void RBM::init_DS(){
 }
 
 void RBM::visualize(float st1, float st2){
-   Visualizer viz(1, ds1_);
+   Visualizer viz(16, ds1_);
    makeBatch(1);
    gsl_matrix_float_set(c2_->bot_->samples_, 0, 0, st1);
    gsl_matrix_float_set(c2_->bot_->samples_, 1, 0, st2);
@@ -203,7 +203,7 @@ void RBM::visualize(float st1, float st2){
    while (1){
       viz.clear();
       gibbs_HV();
-      gsl_matrix_float_get_col(for_viz, c1_->bot_->samples_, 0);
+      gsl_matrix_float_get_col(for_viz, c1_->bot_->expectations_, 0);
       viz.add(for_viz);
       viz.updateViz();
    }

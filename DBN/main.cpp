@@ -38,16 +38,20 @@ int main (int argc, const char * argv[])
    ReLULayer hiddenlayer(16);
    
    Connection c1(&baselayer, &hiddenlayer);
+   c1.decay_ = 0.0002;
    Connection c2(&stimuluslayer, &hiddenlayer);
-
+   c2.decay_ = 0.0001;
+   
    RBM rbm(&c1, &c2);
    
    rbm.load_DS(&data1, &data2);
    
+   print_gsl(data2.train);
+   
    //--------------
    float learningrate = 0.000008;
-   float weightcost = 0.0002;
-   float momentum = 0.6;
+   float weightcost = 0.0001;
+   float momentum = 0.65;
    float k = 1;
    float sparsitytarget = 0.1;
    float decayrate = 0.9;
@@ -57,15 +61,17 @@ int main (int argc, const char * argv[])
    //LEARNING!!!!!!!!!
    ContrastiveDivergence cdLearner(&rbm, learningrate, weightcost, momentum, k, sparsitytarget, decayrate, sparsitycost, batchsize);
    
-   for (int epoch = 1; epoch < 200; ++epoch){
+   for (int epoch = 1; epoch < 300; ++epoch){
       std::cout << "Epoch " << epoch << std::endl;
       cdLearner.run();
       //cdLearner.learningRate_ *= .95;
    }
    
+   std::cout << "Done Learning! " << std::endl;
+   
    get_timecourses(&rbm, &data1);
    
-   //rbm.visualize(1, -1);
+   rbm.visualize(2, 0);
     
    
    return 0; 

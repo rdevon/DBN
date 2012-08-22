@@ -16,8 +16,10 @@ ContrastiveDivergence::ContrastiveDivergence(RBM *rbm, float learningRate, float
    gsl_vector_float_set_all(identity, 1);
    forvizvec = gsl_vector_float_alloc(rbm_->c1_->bot_->nodenum_);
    viz_ = new Visualizer(rbm_->c1_->top_->nodenum_ ,rbm_->ds1_);
+   viz_->initViz();
    // Make batch over batch size for matrix ops
    rbm_->makeBatch(batchsize_);
+   viz_->scale = 8;
 }
 
 void ContrastiveDivergence::getStats(){

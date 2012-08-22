@@ -44,11 +44,13 @@ public:
 class Learner{
 public:
    float learning_rate_;
+   float decay_;
    gsl_vector_float *vec_update;
    gsl_vector_float *vec_update2;
    gsl_matrix_float *mat_update;
    virtual void update(ContrastiveDivergence*) = 0;
    gsl_matrix_float *stat1, *stat2, *stat3, *stat4;
+   Learner(){decay_ = 0;}
 };
 
 

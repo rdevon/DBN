@@ -479,7 +479,7 @@ void Visualizer::add(gsl_vector_float *sample){
       gsl_vector_float_mul(sample, data_->norm_);
    }*/
    
-   gsl_vector_float_scale(sample, 8);
+   gsl_vector_float_scale(sample, scale);
    
    for (int i = 0; i < sample->size; ++i){
       if (gsl_vector_float_get(sample, i) < .2)
@@ -530,8 +530,8 @@ void Visualizer::plot(){
 
 void Visualizer::initViz(){
    
-   int width = imageW*across*3;
-   int height = imageH*down*3;
+   int width = 1000;
+   int height = 1000;
    // Initialize GLFW
    _running = true;
    glfwInit();

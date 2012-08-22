@@ -27,11 +27,12 @@ public:
    int count, across, down;
    int imageW, imageH; 
    gsl_matrix_float *viz;
+   float scale;
    
    DataSet *data_;
    
    Visualizer(){}
-   Visualizer(int minsamples, DataSet *data, std::string newname = ""): count(0) {
+   Visualizer(int minsamples, DataSet *data, std::string newname = ""): count(0), scale(1) {
       data_ = data;
       if (newname == "") name = data->name;
       else name = newname;
@@ -44,7 +45,6 @@ public:
       imageH = data->height;
       imageW = data->width;
       viz = gsl_matrix_float_calloc(imageH*down, imageW*across);
-      initViz();
    }
    
    void add(gsl_vector_float *sample);
