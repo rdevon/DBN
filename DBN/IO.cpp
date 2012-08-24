@@ -160,9 +160,48 @@ void DataSet::loadSPM(){
       int index = 1;
       std::istringstream iss(line);
       while (iss >> value) {
-         if (index == 3 || index == 4) gsl_matrix_float_set(train, sample, index-3, value);
+         if (index == 1 || index == 2)
+            for (int i = 0; i < width/2; ++i){
+               gsl_matrix_float_set(train, sample, index-1+(2*i), value);
+            }
          ++index;
       }
+      ++sample;
+   }
+   file.close();
+}
+
+void DataSet::loadstim(){
+   number = 220;
+   width = 2;
+   height = 1;
+   train = gsl_matrix_float_alloc(number, width*height);
+   std::cout << "Loading stimulus" << std::endl;
+   
+   std::string filename;
+   std::ifstream file;
+   std::string line;
+   int sample = 0;
+   
+   filename = SPMpath + "l_stim.dat";
+   file.open(filename.c_str());
+   
+   while (getline(file, line)){
+      float value;
+      std::istringstream iss(line);
+      while (iss >> value) gsl_matrix_float_set(train, sample, 0, value);
+      ++sample;
+   }
+   file.close();
+   
+   sample = 0;
+   filename = SPMpath + "r_stim.dat";
+   file.open(filename.c_str());
+   
+   while (getline(file, line)){
+      float value;
+      std::istringstream iss(line);
+      while (iss >> value) gsl_matrix_float_set(train, sample, 1, value);
       ++sample;
    }
    file.close();

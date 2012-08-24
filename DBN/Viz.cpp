@@ -482,7 +482,7 @@ void Visualizer::add(gsl_vector_float *sample){
    gsl_vector_float_scale(sample, scale);
    
    for (int i = 0; i < sample->size; ++i){
-      if (gsl_vector_float_get(sample, i) < .2)
+      if (gsl_vector_float_get(sample, i) < 0.2)
          gsl_vector_float_set(sample, i, -10);
    }
    
@@ -498,8 +498,9 @@ void Visualizer::add(gsl_vector_float *sample){
       for (int jj = 0; jj < imageW; ++jj)
       {
          float val;
-         if (ii == 0 || ii == imageH || jj == 0 || jj == imageW) val = .2;
-         else val = gsl_vector_float_get(sample, (jj+ii*imageW));
+         //if (ii == 0 || ii == imageH || jj == 0 || jj == imageW) val = .2;
+         //else
+         val = gsl_vector_float_get(sample, (jj+ii*imageW));
          gsl_matrix_float_set(viz, i+ii, j+jj, val);
       }
 

@@ -14,10 +14,9 @@ Connection::Connection(Layer *bot, Layer *top) : Learner(), bot_(bot), top_(top)
 }
 
 void Connection::update(ContrastiveDivergence* teacher){
-   
    gsl_matrix_float *weight_update = mat_update;
    
-   float learning_rate = teacher->learningRate_/((float)teacher->batchsize_);
+   float learning_rate = learning_rate_/((float)teacher->batchsize_);
    //learning_rate/=(float)teacher->batchsize_;
    gsl_blas_sgemm(CblasNoTrans, CblasTrans , learning_rate, stat1, stat2, teacher->momentum_, weight_update);
    gsl_blas_sgemm(CblasNoTrans, CblasTrans , -learning_rate, stat3, stat4, 1, weight_update);
@@ -29,6 +28,8 @@ void Connection::update(ContrastiveDivergence* teacher){
    
    gsl_matrix_float_add(weights_, weight_update);
    
+   top_->learning_rate_ = learning_rate_;
+   bot_->learning_rate_ = learning_rate_;
    top_->update(teacher);
    bot_->update(teacher);
    

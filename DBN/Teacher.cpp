@@ -9,8 +9,11 @@
 #include "Teacher.h"
 #include "RBM.h"
 #include "Viz.h"
+#include <gsl/gsl_sort_vector.h>
+#include <gsl/gsl_permutation.h>
+#include <gsl/gsl_permute.h>
 
-ContrastiveDivergence::ContrastiveDivergence(RBM *rbm, float learningRate, float weightcost, float momentum, int k, float p, float lambda, float sparsitycost, int batchsize) : rbm_(rbm), learningRate_(learningRate), weightcost_(weightcost), momentum_(momentum), k_(k), p_(p), lambda_(lambda), sparsitycost_(sparsitycost), batchsize_(batchsize)
+ContrastiveDivergence::ContrastiveDivergence(RBM *rbm, float momentum, int k, float p, float lambda, float sparsitycost, int batchsize) : rbm_(rbm), momentum_(momentum), k_(k), p_(p), lambda_(lambda), sparsitycost_(sparsitycost), batchsize_(batchsize)
 {
    identity = gsl_vector_float_alloc(batchsize_);
    gsl_vector_float_set_all(identity, 1);
@@ -50,7 +53,7 @@ void ContrastiveDivergence::run(){
    float topdim, botdim;
    rbm_->get_dims(&topdim, &botdim);
    
-   std::cout << "Teaching RBM with input" << std::endl << "RBM dimensions: " << botdim << "x" << topdim << std::endl << "Learning rate: " << learningRate_ << std::endl << "K: " << k_ << std::endl << "Batch Size: " << batchsize_ << std::endl;
+   std::cout << "Teaching RBM with input" << std::endl << "RBM dimensions: " << botdim << "x" << topdim << std::endl << "K: " << k_ << std::endl << "Batch Size: " << batchsize_ << std::endl;
    
    rbm_->init_DS();
    
@@ -72,14 +75,29 @@ void ContrastiveDivergence::run(){
 }
 
 void ContrastiveDivergence::monitor(int i){
+   gsl_matrix_float *weights = rbm_->c1_->weights_;
+   /*gsl_vector_float *sums = gsl_vector_float_alloc(rbm_->c1_->weights_->size1);
+   for (int i = 0; i < weights->size1; ++i){
+      float sum = 0;
+      for (int j = 0; j < weights->size2; ++j)
+         sum += pow(gsl_matrix_float_get(rbm_->c1_->weights_, i , j),2);
+      gsl_vector_float_set(sums, i, sum);
+   }
+   gsl_permutation *p = gsl_permutation_alloc(rbm_->c1_->weights_->size1);
+   gsl_sort_vector_float_index(p, sums);*/
+   
    viz_->clear();
-   for (int j = 0; j<rbm_->c1_->weights_->size1; ++j) {
+   for (int j = 0; j<weights->size1; ++j) {
       /*gsl_matrix_float_get_row(forvizvec, data_->train, j);
       viz_->add(forvizvec); */     ///Uncomment these if you want to see the input vectors
-      gsl_matrix_float_get_row(forvizvec, rbm_->c1_->weights_, j);
+      //size_t index = p->data[j];
+      //gsl_matrix_float_get_row(forvizvec, weights, index);
+      gsl_matrix_float_get_row(forvizvec, weights, j);
       viz_->add(forvizvec);
    }
    //update opengl window
    viz_->updateViz();
    viz_->plot();
+   /*gsl_vector_float_free(sums);
+   gsl_permutation_free(p);*/
 }

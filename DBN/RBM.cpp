@@ -155,7 +155,7 @@ void RBM::load_DS(DataSet *ds1, DataSet *ds2 = NULL){
    ds1_ = ds1;
    ds2_ = ds2;
    c1_->bot_->shapeInput(ds1_);
-   //if (c2_ != NULL) c2_->bot_->shapeInput(ds2_);
+   if (c2_ != NULL) c2_->bot_->shapeInput(ds2_);
 }
 
 void RBM::load_input_batch(int index){

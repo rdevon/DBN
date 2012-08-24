@@ -38,6 +38,7 @@ public:
    void loadMNIST();
    void loadfMRI();
    void loadSPM();
+   void loadstim();
    void splitValidate(float percentage = .1);
    void removeMeanImage();
    void getMask();

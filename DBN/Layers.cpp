@@ -61,7 +61,7 @@ void Layer::expandBiases(){
 
 void Layer::update(ContrastiveDivergence *teacher){
    gsl_vector_float *bias_update = vec_update;
-   float learning_rate = teacher->learningRate_/(float)teacher->batchsize_;
+   float learning_rate = learning_rate_/(float)teacher->batchsize_;
    gsl_blas_sgemv(CblasNoTrans, learning_rate, stat1, teacher->identity, teacher->momentum_, bias_update);
    gsl_blas_sgemv(CblasNoTrans, -learning_rate, stat2, teacher->identity, 1, bias_update);
    gsl_vector_float *decay = gsl_vector_float_alloc(nodenum_);
