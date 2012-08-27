@@ -32,7 +32,7 @@ public:
    void getFreeEnergy();
    void gibbs_HV();
    void gibbs_VH();
-   void getReconstructionCost(Input_t *input);
+   void getReconstructionCost();
    void sample(DataSet *data, Visualizer *viz);
    
    void makeBatch(int batchsize);
@@ -46,7 +46,7 @@ public:
       if (c2_ != NULL) c2_->catch_stats(s);
       
    }
-   
+   void load_DS(DataSet *ds1);
    void load_DS(DataSet*, DataSet*);
    void load_input_batch(int index);
    void init_DS();

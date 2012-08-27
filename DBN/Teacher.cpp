@@ -72,6 +72,7 @@ void ContrastiveDivergence::run(){
       // And monitor
       if ((i*batchsize_)%(rbm_->ds1_->train->size1/10) == 0) monitor(i*batchsize_);
    }
+   rbm_->getReconstructionCost();
 }
 
 void ContrastiveDivergence::monitor(int i){

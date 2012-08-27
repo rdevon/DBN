@@ -54,3 +54,17 @@ void ReLULayer::shapeInput(DataSet* data){
    gsl_matrix_float_add_constant(input, -min);
    gsl_matrix_float_scale(input, (float)1/((float)(max-min)));
 }
+
+float ReLULayer::reconstructionCost(gsl_matrix_float *dataMat, gsl_matrix_float *modelMat){
+   float RC=0;
+   gsl_matrix_float *squared_error = gsl_matrix_float_alloc(dataMat->size1, dataMat->size2);
+   gsl_matrix_float_memcpy(squared_error, dataMat);
+   gsl_matrix_float_sub(squared_error, modelMat);
+   gsl_matrix_float_mul_elements(squared_error, squared_error);
+   for (int i = 0; i < squared_error->size1; ++i)
+      for (int j = 0; j < squared_error->size2; ++j)
+         RC+=gsl_matrix_float_get(squared_error, i, j);
+   RC /= squared_error->size2;
+   gsl_matrix_float_free(squared_error);
+   return RC;
+}

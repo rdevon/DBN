@@ -110,7 +110,7 @@ public:
    void getExpectations();
    void shapeInput(DataSet* data);
    
-   float reconstructionCost(gsl_matrix_float *dataMat, gsl_matrix_float *modelMat){return 0;}
+   float reconstructionCost(gsl_matrix_float *dataMat, gsl_matrix_float *modelMat);
    void getEnergy(){}
    float freeEnergy_contibution();
    
@@ -159,7 +159,7 @@ public:
    
    void makeBatch(int batchsize);
    
-   float reconstructionCost(gsl_matrix_float *dataMat, gsl_matrix_float *modelMat){return 0;}
+   float reconstructionCost(gsl_matrix_float *dataMat, gsl_matrix_float *modelMat);
    void getEnergy(){}
    float freeEnergy_contibution(){ return 0;}
    

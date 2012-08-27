@@ -34,20 +34,18 @@ int main (int argc, const char * argv[])
    //---------DONE INIT
    //--------- GSL TESTS GO HERE ----------------
    
-   print_gsl(data2.train);
-   
    //INIT RBM
    
    GaussianLayer baselayer((int)data1.train->size2);
-   SigmoidLayer stimuluslayer((int)data2.train->size2);
-   ReLULayer hiddenlayer(10);
+   ReLULayer stimuluslayer((int)data2.train->size2);
+   ReLULayer hiddenlayer(16);
    
    Connection c1(&baselayer, &hiddenlayer);
-   c1.decay_ = 0.0002;
    c1.learning_rate_ = 0.000008;
+   c1.decay_ = 0.0002;
    Connection c2(&stimuluslayer, &hiddenlayer);
+   c2.learning_rate_ = 0.000008;
    c2.decay_ = 0.0002;
-   c2.learning_rate_ = 0.008;
    
    RBM rbm(&c1, &c2);
    
@@ -59,7 +57,7 @@ int main (int argc, const char * argv[])
    rbm.load_DS(&data1, &data2);
    
    //--------------
-   float momentum = 0.5;
+   float momentum = 0.65;
    float k = 1;
    float sparsitytarget = 0.1;
    float decayrate = 0.9;
@@ -69,7 +67,7 @@ int main (int argc, const char * argv[])
    //LEARNING!!!!!!!!!
    ContrastiveDivergence cdLearner(&rbm, momentum, k, sparsitytarget, decayrate, sparsitycost, batchsize);
    
-   for (int epoch = 1; epoch < 300; ++epoch){
+   for (int epoch = 1; epoch < 500; ++epoch){
       std::cout << "Epoch " << epoch << std::endl;
       cdLearner.run();
       //cdLearner.learningRate_ *= .95;
@@ -81,7 +79,7 @@ int main (int argc, const char * argv[])
    
    get_timecourses(&rbm, &data1);
    
-   rbm.visualize(0, 1);
+   rbm.visualize(0, 10);
     
    
    return 0; 

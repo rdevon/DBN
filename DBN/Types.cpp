@@ -9,7 +9,7 @@
 #include "Types.h"
 
 gsl_rng * r;
-std::string MNISTpath = "/Users/devon/Documents/Research/DBN/MNISTdata/";
-std::string plotpath = "/Users/devon/Documents/Research/DBN/plots/";
-std::string fMRIpath = "/Users/devon/Documents/Research/DBN/fMRIdata/";
-std::string SPMpath = "/Users/devon/Documents/Research/DBN/SPMdata/";
+std::string MNISTpath = "/Users/devon/Research/DBN/MNISTdata/";
+std::string plotpath = "/Users/devon/Research/DBN/plots/";
+std::string fMRIpath = "/Users/devon/Research/DBN/fMRIdata/";
+std::string SPMpath = "/Users/devon/Research/DBN/SPMdata/";

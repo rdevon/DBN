@@ -205,6 +205,7 @@ void DataSet::loadstim(){
       ++sample;
    }
    file.close();
+   gsl_matrix_float_scale(train, 10);
 }
 
 

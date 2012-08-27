@@ -61,12 +61,12 @@ void RBM::gibbs_VH(){
 
 void RBM::makeBatch(int batchsize){
    c1_->makeBatch(batchsize);
-   c2_->makeBatch(batchsize);
+   if (c2_ != NULL) c2_->makeBatch(batchsize);
 }
 
 void RBM::expandBiases(){
    c1_->expandBiases();
-   c2_->expandBiases();
+   if (c2_ != NULL) c2_->expandBiases();
 }
 
 void RBM::get_dims(float *topdim, float *botdim){
@@ -76,24 +76,30 @@ void RBM::get_dims(float *topdim, float *botdim){
 
 void RBM::update(ContrastiveDivergence *cd){
    c1_->update(cd);
-   c2_->update(cd);
+   if (c2_ != NULL) c2_->update(cd);
 }
 
-void RBM::getReconstructionCost(Input_t *input){
-   float oldbatch = c1_->bot_->batchsize_;
+void RBM::getReconstructionCost(){
+   int oldbatch = c1_->bot_->batchsize_;
    Layer *bot = c1_->bot_;
+   
+   Input_t *input = ds1_->train;
    
    //Make batch over entire input for matrix ops
    makeBatch((int)input->size1);
    
-   //Enter the entire input as the activations and means.  for some reason gsl_matrix_transpose_memcopy isn't working here.
-   gsl_matrix_float *dataMat = gsl_matrix_float_calloc(input->size2, input->size1);
-   gsl_matrix_float *modelMat;
-   
+   //Enter the entire input as the activations and means.  for some reason ; isn't working here.
+   gsl_matrix_float *dataMat = gsl_matrix_float_alloc(input->size2, input->size1);
    gsl_matrix_float_transpose_memcpy(dataMat, input);
-   
+   gsl_matrix_float *modelMat;
+    
    gsl_matrix_float_memcpy(bot->samples_, dataMat);
    gsl_matrix_float_memcpy(bot->expectations_, dataMat);
+   
+   if (c2_ != NULL){
+      gsl_matrix_float_transpose_memcpy(c2_->bot_->samples_, ds2_->train);
+      gsl_matrix_float_transpose_memcpy(c2_->bot_->expectations_, ds2_->train);
+   }
    
    up_act_->s_flag_ = NOSAMPLE;
    down_act_->s_flag_ = NOSAMPLE;
@@ -106,12 +112,23 @@ void RBM::getReconstructionCost(Input_t *input){
    // calculate the reconstruction cost as per the visible layer type
    reconstructionCost_ = bot->reconstructionCost(dataMat, modelMat);
    
-   std::cout << "Reconstruction cost: " << reconstructionCost_ << std::endl;
+   std::cout << "Reconstruction cost 1: " << reconstructionCost_ << std::endl;
    
-   gsl_matrix_float_free(dataMat);
+   if (c2_ != NULL){
+      gsl_matrix_float_free(dataMat);
+      input = ds2_->train;
+      bot = c2_->bot_;
+      dataMat = gsl_matrix_float_alloc(input->size2, input->size1);
+      gsl_matrix_float_transpose_memcpy(dataMat, input);
+      modelMat = bot->expectations_;
+      float RC2 = bot->reconstructionCost(dataMat, modelMat);
+      std::cout << "Reconstruction cost 2: " << RC2 << std::endl;
+      reconstructionCost_ += RC2;
+   }
    
    // Revert to the old batchsize.
    makeBatch(oldbatch);
+   gsl_matrix_float_free(dataMat);
 }
 
 void RBM::sample(DataSet *data, Visualizer *viz){
@@ -149,6 +166,10 @@ void RBM::sample(DataSet *data, Visualizer *viz){
    
    viz->plot();
    gsl_vector_float_free(samples);
+}
+
+void RBM::load_DS(DataSet *ds1){
+   ds1_ = ds1;
 }
 
 void RBM::load_DS(DataSet *ds1, DataSet *ds2 = NULL){
