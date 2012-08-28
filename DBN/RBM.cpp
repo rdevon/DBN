@@ -8,18 +8,23 @@
 
 #include <iostream>
 #include "RBM.h"
+#include "Connections.h"
 
-RBM::RBM(Connection* c1) : c1_(c1), c2_(NULL), reconstructionCost_(0) {
+RBM::RBM(Connection* c1) : c1_(c1), c2_(NULL), reconstructionCost_(0), DBNLayer() {
    up_act_ = new Activator(UPFLAG, c1_);
    down_act_ = new Activator(DOWNFLAG, c1_);
 }
 
-RBM::RBM(Connection* c1, Connection* c2) : c1_(c1), c2_(c2), reconstructionCost_(0){
+RBM::RBM(Connection* c1, Connection* c2) : c1_(c1), c2_(c2), reconstructionCost_(0), DBNLayer(){
    up_act_ = new Activator(UPFLAG, c1_, c2_);
    down_act_ = new Activator(DOWNFLAG, c1_, c2_);
 }
 
 void RBM::getFreeEnergy(){
+}
+
+void RBM::learn(){
+   teacher->teachRBM(this);
 }
 
 void RBM::gibbs_HV(){
@@ -38,6 +43,12 @@ void RBM::gibbs_HV(){
       c2_->bot_->getExpectations();
       c2_->bot_->sample();
    }
+   
+}
+
+void RBM::catch_stats(Stat_flag_t s){
+   c1_->catch_stats(s);
+   if (c2_ != NULL) c2_->catch_stats(s);
    
 }
 
@@ -229,4 +240,18 @@ void RBM::visualize(float st1, float st2){
       viz.updateViz();
    }
    gsl_vector_float_free(for_viz);
+}
+
+Input_t *RBM::transport_data(){
+   int old_batch = c1_->bot_->batchsize_;
+   makeBatch((int)ds1_->train->size1);
+   gsl_matrix_float *new_data = gsl_matrix_float_alloc(c1_->top_->batchsize_, c1_->top_->nodenum_);
+   gsl_matrix_float_transpose_memcpy(c1_->bot_->expectations_, ds1_->train);
+   if (c2_ != NULL) gsl_matrix_float_transpose_memcpy(c2_->bot_->expectations_, ds2_->train);
+   up_act_->s_flag_ = NOSAMPLE;
+   up_act_->activate();
+   c1_->top_->getExpectations();
+   gsl_matrix_float_transpose_memcpy(new_data, c1_->top_->expectations_);
+   makeBatch(old_batch);
+   return new_data;
 }

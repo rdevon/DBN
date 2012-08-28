@@ -10,7 +10,7 @@
 #include "Layers.h"
 
 
-Layer::Layer(int nodenum) : Learner(), nodenum_(nodenum), batchsize_(1), frozen(false), energy_(0) {
+Layer::Layer(int nodenum) : LearningUnit(), nodenum_(nodenum), batchsize_(1), frozen(false), energy_(0) {
    
    activations_ = gsl_matrix_float_calloc(nodenum_, batchsize_);
    expectations_ = gsl_matrix_float_calloc(nodenum_, batchsize_);

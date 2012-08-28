@@ -23,7 +23,7 @@ class Activator;
 // Binary connections between layers.  This is where the propagation happens as well as being a container for
 // layers.  Layers are kept inside binary connections.  This should be make it easy to make generic graphs
 // of layers.
-class Connection : public Learner {
+class Connection : public LearningUnit {
 public:
    Layer *top_;
    Layer *bot_;

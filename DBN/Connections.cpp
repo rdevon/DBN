@@ -8,7 +8,7 @@
 
 #include "Connections.h"
 
-Connection::Connection(Layer *bot, Layer *top) : Learner(), bot_(bot), top_(top) {
+Connection::Connection(Layer *bot, Layer *top) : LearningUnit(), bot_(bot), top_(top) {
    initializeWeights();
    mat_update = gsl_matrix_float_calloc(top_->nodenum_, bot_->nodenum_);
 }

@@ -14,13 +14,15 @@
 
 // This class keeps tracks of statistics and impliments teaching to various components.
 
-class RBM;
+class Learner;
 class Visualizer;
+class RBM;
 
 class Teacher{
 public:
    ~Teacher(){}
    Teacher(){}
+   virtual void teachRBM(RBM* rbm) = 0;
 };
 
 class ContrastiveDivergence : public Teacher {
@@ -30,18 +32,24 @@ public:
    gsl_vector_float *identity, *forvizvec;
    
    Visualizer *viz_;
-   RBM *rbm_;
    
    ~ContrastiveDivergence(){}
    ContrastiveDivergence(){}
    ContrastiveDivergence(RBM *rbm, float momentum, int k, float p, float lambda, float sparsitycost, int batchsize);
    
-   void getStats();
-   void run();
-   void monitor(int i);
+   void getStats(RBM*);
+   void teachRBM(RBM* rbm);
+   void monitor(RBM*, int i);
 };
 
 class Learner{
+public:
+   Learner(){}
+   Teacher *teacher;
+   virtual void learn() = 0;
+};
+
+class LearningUnit {
 public:
    float learning_rate_;
    float decay_;
@@ -50,11 +58,7 @@ public:
    gsl_matrix_float *mat_update;
    virtual void update(ContrastiveDivergence*) = 0;
    gsl_matrix_float *stat1, *stat2, *stat3, *stat4;
-   Learner(){decay_ = 0;}
+   LearningUnit(){decay_ = 0;}
 };
-
-
-
-
 
 #endif /* defined(__DBN__Teacher__) */

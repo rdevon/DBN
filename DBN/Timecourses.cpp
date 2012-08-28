@@ -7,6 +7,7 @@
 //
 
 #include "Timecourses.h"
+#include "Connections.h"
 
 void get_timecourses(RBM *rbm, DataSet *data){
    Input_t *course = data->extra;

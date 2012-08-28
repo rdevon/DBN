@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include "RBM.h"
+#include "Connections.h"
 #include "Viz.h"
 #include "IO.h"
 #include "Types.h"
@@ -37,7 +38,7 @@ int main (int argc, const char * argv[])
    //INIT RBM
    
    GaussianLayer baselayer((int)data1.train->size2);
-   ReLULayer stimuluslayer((int)data2.train->size2);
+   SigmoidLayer stimuluslayer((int)data2.train->size2);
    ReLULayer hiddenlayer(16);
    
    Connection c1(&baselayer, &hiddenlayer);
@@ -66,10 +67,11 @@ int main (int argc, const char * argv[])
    
    //LEARNING!!!!!!!!!
    ContrastiveDivergence cdLearner(&rbm, momentum, k, sparsitytarget, decayrate, sparsitycost, batchsize);
+   rbm.teacher = &cdLearner;
    
-   for (int epoch = 1; epoch < 500; ++epoch){
+   for (int epoch = 1; epoch < 1000; ++epoch){
       std::cout << "Epoch " << epoch << std::endl;
-      cdLearner.run();
+      rbm.learn();
       //cdLearner.learningRate_ *= .95;
    }
    
@@ -79,7 +81,7 @@ int main (int argc, const char * argv[])
    
    get_timecourses(&rbm, &data1);
    
-   rbm.visualize(0, 10);
+   rbm.visualize(0, 5);
     
    
    return 0; 

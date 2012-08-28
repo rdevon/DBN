@@ -25,12 +25,11 @@
 
 class Layer;
 
-
 /////////////////////////////////////
 // Layer class
 /////////////////////////////////////
 
-class Layer : public Learner {
+class Layer : public LearningUnit {
 public:
    bool frozen;
    bool expectation_up_to_date, sample_up_to_date, learning_up_to_date;

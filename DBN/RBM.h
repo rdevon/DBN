@@ -8,13 +8,16 @@
 
 #ifndef DBN_RBM_h
 #define DBN_RBM_h
-#include "Connections.h"
 #include "SupportFunctions.h"
 #include "Viz.h"
+#include "DBN.h"
+#include "Teacher.h"
 
 class ContrastiveDivergence;
+class Connection;
+class Activator;
 
-class RBM {
+class RBM : public DBNLayer, public Learner{
 public:
    float freeEnergy_, reconstructionCost_;
    Connection *c1_, *c2_;
@@ -35,22 +38,21 @@ public:
    void getReconstructionCost();
    void sample(DataSet *data, Visualizer *viz);
    
+   void learn();
+   
    void makeBatch(int batchsize);
    void expandBiases();
    void get_dims(float *topdim, float *botdim);
    
    void update(ContrastiveDivergence*);
    
-   void catch_stats(Stat_flag_t s){
-      c1_->catch_stats(s);
-      if (c2_ != NULL) c2_->catch_stats(s);
-      
-   }
+   void catch_stats(Stat_flag_t s);
    void load_DS(DataSet *ds1);
    void load_DS(DataSet*, DataSet*);
    void load_input_batch(int index);
    void init_DS();
    void visualize(float st1, float st2);
+   Input_t *transport_data();
 };
 
 
