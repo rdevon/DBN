@@ -9,55 +9,62 @@
 #ifndef DBN_Layers_h
 #define DBN_Layers_h
 
-#include <iostream>
-#include "Types.h"
-#include <gsl/gsl_vector.h>
-#include <gsl/gsl_matrix.h>
-#include <gsl/gsl_blas.h>
-#include <gsl/gsl_rng.h>
-#include <gsl/gsl_randist.h>
-#include <gsl/gsl_statistics.h>
+#include "Teacher.h"
+#include "MLP.h"
+#include "Viz.h"
+
 #include "SupportMath.h"
 #include "SupportFunctions.h"
-#include "IO.h"
-#include "Teacher.h"
-#include "Layers.h"
-
-class Layer;
+#include "Types.h"
 
 /////////////////////////////////////
 // Layer class
 /////////////////////////////////////
 
-class Layer : public LearningUnit {
+class Layer : public LearningUnit, public Node, public Monitor_Unit {
 public:
-   bool frozen;
-   bool expectation_up_to_date, sample_up_to_date, learning_up_to_date;
    
-   int nodenum_, batchsize_;
+   // MEMBERS -------------------------------------------------------------------------------------
    
-   //--------All of the activations are done as nxb matrices, where n is the number of nodes and b is the batch size
-   gsl_matrix_float *activations_;                 // The literal unit activations.
-   gsl_matrix_float *samples_;                     // These are for the binary units specifically, but might be needed for others.  The sigmoid function is
-   gsl_matrix_float *expectations_;                // The statistical mean of the samples.  These are good when doing less noisy analysis (see activation flags)
-   gsl_vector_float *m_factor_;                    // A multiplicative factor for signals (this is for gaussian layers especially)
+   int                  nodenum;
+   int                  batchsize;
+   bool                 noisy;
+   float                noise;
    
-   gsl_vector_float *biases_;                      // Biases
-   gsl_matrix_float *batchbiases_;                 // For batch processing
+   //--------All of the activations are done as nxb matrices, where n is the number of nodes and b
+   //--------is the batch size
    
-   float energy_;                                  // Energy of the layer *TODO*
+   gsl_matrix_float     *activations;                 // The literal unit activations.
+   gsl_matrix_float     *expectations;                // The statistical mean of the samples.  These are good when doing less noisy analysis (see activation flags)
+   gsl_matrix_float     *samples;                     // These are for the binary units specifically, but might be needed for others.  The sigmoid function is
+   gsl_vector_float     *m_factor;                    // A multiplicative factor for signals (this is for gaussian layers especially)
+   
+   gsl_vector_float     *biases;                      // Biases
+   gsl_matrix_float     *batchbiases;                 // For batch processing
+   
+   gsl_matrix_float     *extra;
+   gsl_vector_float     *sample_vector;
+   
+   float                energy;                       // Energy of the layer *TODO*
+   float                reconstruction_cost;
+   
+   // CONSTRUCTORS ---------------------------------------------------------------------------------
    
    ~Layer(){};
+   Layer(){};
    Layer(int n);                                   // Constructor for the Layer
    
    // Unit Functions------------
+   void init_activation(MLP *mlp);
+   void finish_activation(Sample_flag_t);
+   int load_data(Data_flag_t d_flag);
+   
+   void apply_noise();
    virtual void sample() = 0;         // Begin sampling.  If sample flag is on, calculate the samples, set samples to the expectation.
    virtual void getExpectations() = 0;             // Find the expectated values for the layer
    
-   
    // Structure Functions------------
-   void clear();
-   virtual void makeBatch(int batchsize);          // Changes all of the unit matrices into matrices of size
+   virtual void make_batch(int batchsize);          // Changes all of the unit matrices into matrices of size
                                                    // nodenum_ x batchsize_
    void expandBiases();                            // The biases are vectors, but it's nice to have matrix versions as well.
    virtual void shapeInput(DataSet* data) = 0;    // Depending on the type of layer you need to shape the input.  Should be useful in DBNS as well.
@@ -80,8 +87,9 @@ class SigmoidLayer : public Layer {
 public:
    
    SigmoidLayer(int n) : Layer(n){
-      biases_ = gsl_vector_float_alloc(nodenum_);
-      gsl_vector_float_set_all(biases_, 0); // This is to force sparsity in simple cases.  Set to some negative number.  Good for analysis
+      noise = .5;
+      biases = gsl_vector_float_alloc(nodenum);
+      gsl_vector_float_set_all(biases, 0); // This is to force sparsity in simple cases.  Set to some negative number.  Good for analysis
    }
    
    void sample();
@@ -102,7 +110,7 @@ public:
 class ReLULayer : public Layer {
 public:
    ReLULayer(int n) : Layer(n){
-      biases_ = gsl_vector_float_calloc(nodenum_);
+      biases = gsl_vector_float_calloc(nodenum);
    }
    
    void sample();
@@ -123,7 +131,7 @@ public:
 class CSoftmaxLayer : public Layer {
 public:
    CSoftmaxLayer(int n) : Layer(n){
-      biases_ = gsl_vector_float_calloc(nodenum_); //Maybe .5?
+      biases = gsl_vector_float_calloc(nodenum); //Maybe .5?
    }
    
    void sample();

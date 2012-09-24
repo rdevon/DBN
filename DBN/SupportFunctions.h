@@ -8,12 +8,6 @@
 
 #ifndef DBN_SupportFunctions_h
 #define DBN_SupportFunctions_h
-#include "gsl/gsl_rng.h"
-#include "gsl/gsl_vector.h"
-#include "gsl/gsl_matrix.h"
-#include <gsl/gsl_randist.h>
-#include <gsl/gsl_permutation.h>
-#include <gsl/gsl_randist.h>
 #include "Types.h"
 
 gsl_vector_int *makeShuffleList(int length);

@@ -10,11 +10,11 @@
 #define __DBN__Connections__
 
 #include <iostream>
-#include "Layers.h"
+#include "MLP.h"
+#include "Teacher.h"
+#include "Viz.h"
 
-#endif /* defined(__DBN__Connections__) */
-
-class Activator;
+class Layer;
 
 /////////////////////////////////////
 // Connection class
@@ -23,42 +23,27 @@ class Activator;
 // Binary connections between layers.  This is where the propagation happens as well as being a container for
 // layers.  Layers are kept inside binary connections.  This should be make it easy to make generic graphs
 // of layers.
-class Connection : public LearningUnit {
+class Connection : public LearningUnit, public Edge, public Monitor_Unit {
 public:
-   Layer *top_;
-   Layer *bot_;
-   
    float freeEnergy;
+   gsl_matrix_float *weights;
    
-   gsl_matrix_float *weights_;    //The weights between layers;
+   gsl_vector_float *node_projections; //For getting projections onto to nodes
    
-   Connection(Layer *bot, Layer *top);
+   Connection(Layer *from, Layer *to);
+   
+   void make_batch(int batchsize);
+   
+   void init_activation(MLP *mlp);
+   int transmit_signal(Sample_flag_t s_flag);
+   
+   void catch_stats(Stat_flag_t, Sample_flag_t);
    void update(ContrastiveDivergence*);
-   void initializeWeights();
-   void prop(Up_flag_t up, Sample_flag_t s);
-   void initprop(Up_flag_t up);
+   
+   void init_data();
+   int load_data(Data_flag_t);
+   
    void getFreeEnergy();
-   
-   void makeBatch(int batchsize);
-   void expandBiases();
-   void catch_stats(Stat_flag_t s);
 };
 
-/////////////////////////////////////
-// Activator class
-/////////////////////////////////////
-
-// The activator class.  This is for activating a set of layers given a set of connections.  This
-// can activate all of the layers that are up or down to a set of connections.  This is nice for multimodal learning.
-class Activator{
-public:
-   Connection *c1_, *c2_, *c3_;
-   
-   Up_flag_t up_flag_;
-   Sample_flag_t s_flag_;
-   
-   ~Activator(){}
-   Activator(Up_flag_t up, Connection *c1, Connection *c2 = NULL, Connection *c3 = NULL) : up_flag_(up), c1_(c1), c2_(c2), c3_(c3), s_flag_(SAMPLE) {}
-   
-   void activate();
-};
+#endif /* defined(__DBN__Connections__) */

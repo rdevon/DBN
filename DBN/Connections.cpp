@@ -7,113 +7,133 @@
 //
 
 #include "Connections.h"
+#include "Layers.h"
+#include "Types.h"
 
-Connection::Connection(Layer *bot, Layer *top) : LearningUnit(), bot_(bot), top_(top) {
-   initializeWeights();
-   mat_update = gsl_matrix_float_calloc(top_->nodenum_, bot_->nodenum_);
+Connection::Connection(Layer *from_layer, Layer *to_layer) {
+   
+   level = 0;
+   
+   from = from_layer;
+   to = to_layer;
+   
+   from->forward_edges.push_back(this);
+   to->backward_edges.push_back(this);
+   
+   weights = gsl_matrix_float_alloc(to_layer->nodenum, from_layer->nodenum);
+   for (int i = 0; i < to_layer->nodenum; ++i)
+      for (int j = 0; j < from_layer->nodenum; ++j)
+         gsl_matrix_float_set(weights, i, j, (float)gsl_ran_gaussian(r, 0.01));
+   
+   mat_update = gsl_matrix_float_calloc(to_layer->nodenum, from_layer->nodenum);
+   node_projections = gsl_vector_float_alloc(from_layer->nodenum);
+}
+
+void Connection::make_batch(int batchsize){
+   Layer* from_layer = (Layer*)from;
+   Layer* to_layer = (Layer*)to;
+   if (batchsize == 0) batchsize = (int)from_layer->input_edge->train->size1;
+   from_layer->make_batch(batchsize);
+   to_layer->make_batch(batchsize);
+}
+
+void Connection::init_activation(MLP *mlp){
+   Layer *layer;
+   if (direction_flag == FORWARD) layer = (Layer*)to;
+   else if (direction_flag == BACKWARD) layer = (Layer*)from;
+   layer->init_activation(mlp);
+}
+
+int Connection::transmit_signal(Sample_flag_t s_flag){
+   Layer* from_layer = (Layer*)from;
+   Layer* to_layer = (Layer*)to;
+   CBLAS_TRANSPOSE_t transFlag;
+   Layer *input_layer, *output_layer;
+   
+   if (direction_flag == FORWARD) {
+      input_layer = from_layer;
+      output_layer = to_layer;
+      transFlag = CblasNoTrans;
+   }
+   
+   else if (direction_flag == BACKWARD){
+      input_layer = to_layer;
+      output_layer = from_layer;
+      transFlag = CblasTrans;
+   }
+   
+   switch (output_layer->status) {
+      case FROZEN    : return 1;
+      case WAITING   : output_layer->visits_waiting-=1; break;
+      case READY     : std::cout << "shouldn't get here 1 "<< output_layer->status << " " << READY << std::endl; break;
+      case DONE      : return 1;
+      case OFF       : return 1;
+   }
+   
+   
+   switch (input_layer->status) {
+      case WAITING   : return 0;
+      case READY     : std::cout << "shouldn't get here 2 " << input_layer->status << std::endl;
+      case OFF       : return 1;
+      default        :
+      {
+         if (input_layer->noisy && s_flag == SAMPLE) input_layer->apply_noise();
+         
+         gsl_blas_sgemm(transFlag, CblasNoTrans, 1, weights, input_layer->samples, 1, output_layer->activations);
+         if (output_layer->visits_waiting == 0) output_layer->finish_activation(s_flag);
+         return 1;
+      }
+   }
+}
+
+void Connection::catch_stats(Stat_flag_t stat_flag, Sample_flag_t sample_flag){
+   Layer *from_layer = (Layer*)from;
+   Layer *to_layer = (Layer*)to;
+   
+   stat1 = to_layer->stat1;
+   stat2 = from_layer->stat1;
+   stat3 = to_layer->stat2;
+   stat4 = from_layer->stat2;
+   
+   from_layer->catch_stats(stat_flag, sample_flag);
+   if      (stat_flag == NEG) to_layer->catch_stats(stat_flag, NOSAMPLE);
+   else if (stat_flag == POS) to_layer->catch_stats(stat_flag, SAMPLE);
 }
 
 void Connection::update(ContrastiveDivergence* teacher){
+   Layer *from_layer = (Layer*)from;
+   Layer *to_layer = (Layer*)to;
+   
+   from_layer->learning_rate = learning_rate;
+   to_layer->learning_rate = learning_rate;
+   from_layer->update(teacher);
+   to_layer->update(teacher);
+   
    gsl_matrix_float *weight_update = mat_update;
-   
-   float learning_rate = learning_rate_/((float)teacher->batchsize_);
+   float rate = learning_rate/((float)teacher->batchsize);
    //learning_rate/=(float)teacher->batchsize_;
-   gsl_blas_sgemm(CblasNoTrans, CblasTrans , learning_rate, stat1, stat2, teacher->momentum_, weight_update);
-   gsl_blas_sgemm(CblasNoTrans, CblasTrans , -learning_rate, stat3, stat4, 1, weight_update);
+   gsl_blas_sgemm(CblasNoTrans, CblasTrans , rate, stat1, stat2, teacher->momentum, weight_update);
+   gsl_blas_sgemm(CblasNoTrans, CblasTrans , -rate, stat3, stat4, 1, weight_update);
    
-   gsl_matrix_float *weightdecay = gsl_matrix_float_alloc(weights_->size1, weights_->size2);
-   gsl_matrix_float_memcpy(weightdecay, weights_);
-   gsl_matrix_float_scale(weightdecay, decay_);
+   gsl_matrix_float *weightdecay = gsl_matrix_float_alloc(weights->size1, weights->size2);
+   gsl_matrix_float_memcpy(weightdecay, weights);
+   gsl_matrix_float_scale(weightdecay, decay);
    gsl_matrix_float_sub(weight_update, weightdecay);
    
-   gsl_matrix_float_add(weights_, weight_update);
-   
-   top_->learning_rate_ = learning_rate_;
-   bot_->learning_rate_ = learning_rate_;
-   top_->update(teacher);
-   bot_->update(teacher);
+   gsl_matrix_float_add(weights, weight_update);
    
    gsl_matrix_float_free(weightdecay);
 }
 
-void Connection::initializeWeights(){
-   
-   // Set weights to initial normal distribution with 0 mean and 0.01 variance.  This is suggested by Hinton but different from tutorial which uses
-   // initial uniform distribution between -+4 sqrt(6/(h_nodes+vnodes))
-   
-   weights_ = gsl_matrix_float_alloc(top_->nodenum_, bot_->nodenum_);
-   for (int i = 0; i < top_->nodenum_; ++i)
-      for (int j = 0; j < bot_->nodenum_; ++j)
-         gsl_matrix_float_set(weights_, i, j, (float)gsl_ran_gaussian(r, 0.01));
+void Connection::init_data(){
+   Layer *from_layer = (Layer*)from;
+   from_layer->input_edge->index = 0;
 }
 
-void Connection::prop(Up_flag_t up, Sample_flag_t s){
-   CBLAS_TRANSPOSE_t transFlag;
-   Layer *signal_layer;
-   Layer *layer;
-   gsl_matrix_float *signal;
-   if (up == UPFLAG){
-      layer = top_;
-      signal_layer = bot_;
-      transFlag = CblasNoTrans;
-   }
-   else {
-      layer = bot_;
-      signal_layer = top_;
-      transFlag = CblasTrans;
-   }
-   
-   if (s == SAMPLE) signal = signal_layer->samples_;
-   else signal = signal_layer->expectations_;
-   
-   //gsl_matrix_float *eff_weights = gsl_matrix_float_alloc(weights_->size1, weights_->size2);
-   
-   
-   if (layer->frozen == false){
-      layer->expandBiases();
-      gsl_blas_sgemm(transFlag, CblasNoTrans, 1, weights_, signal, 1, layer->activations_);
-      gsl_matrix_float_add(layer->activations_, layer->batchbiases_);
-      layer->expectation_up_to_date = false;
-      layer->sample_up_to_date = false;
-      layer->learning_up_to_date = false;
-   }
-   else {
-      layer->expectation_up_to_date = true;
-      layer->sample_up_to_date = true;
-      layer->learning_up_to_date = true;
-   }
+int Connection::load_data(Data_flag_t data_flag){
+   Layer *from_layer = (Layer*)from;
+   if (from_layer->status == DONE) return 1;
+   return from_layer->load_data(data_flag);
 }
 
-void Connection::initprop(Up_flag_t up){
-   if (up == UPFLAG) gsl_matrix_float_set_all(top_->activations_, 0);
-   else gsl_matrix_float_set_all(bot_->activations_, 0);
-}
 
-void Connection::makeBatch(int batchsize) {
-   top_->makeBatch(batchsize);
-   bot_->makeBatch(batchsize);
-}
-
-void Connection::expandBiases(){
-   top_->expandBiases();
-   bot_->expandBiases();
-}
-
-void Connection::catch_stats(Stat_flag_t s){
-   stat1 = top_->stat1;
-   stat2 = bot_->stat1;
-   stat3 = top_->stat2;
-   stat4 = bot_->stat2;
-   bot_->catch_stats(s, SAMPLE);
-   if (s == NEG) top_->catch_stats(s, NOSAMPLE);
-   else top_->catch_stats(s, SAMPLE);
-}
-
-void Activator::activate(){
-   c1_->initprop(up_flag_);
-   if (c2_ != NULL) c2_->initprop(up_flag_);
-   //c3_->initprop(up_flag_);
-   c1_->prop(up_flag_, s_flag_);
-   if (c2_ != NULL) c2_->prop(up_flag_, s_flag_);
-   //c3_->prop(up_flag_);
-}

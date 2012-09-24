@@ -7,27 +7,24 @@
 //
 
 #include "Timecourses.h"
+#include "RBM.h"
 #include "Connections.h"
+#include "Layers.h"
+#include "IO.h"
 
-void get_timecourses(RBM *rbm, DataSet *data){
-   Input_t *course = data->extra;
-   Layer *bot = rbm->c1_->bot_;
-   Layer *top = rbm->c1_->top_;
+void get_timecourses(RBM *rbm, Connection *connection, DataSet *data){
+   Layer *bot = (Layer*)connection->from;
+   Layer *top = (Layer*)connection->to;
+   bot->input_edge->train = data->extra;
+   rbm->init_data();
+   rbm->make_batch((int)data->extra->size1);
+   rbm->load_data(TRAIN);
    
-   rbm->makeBatch((int)course->size1);
    
-   Visualizer viz(top->nodenum_, data, "fMRI_timecourses");
-   Visualizer viz2(top->nodenum_, data, "fMRI_timecourses2");
-   
-   gsl_matrix_float_transpose_memcpy(bot->expectations_, course);
-   rbm->up_act_->s_flag_ = NOSAMPLE;
-   rbm->up_act_->activate();
-   top->getExpectations();
-   
-   viz.viz = gsl_matrix_float_alloc(top->activations_->size1, top->activations_->size2);
-   viz2.viz = gsl_matrix_float_alloc(top->activations_->size1, top->activations_->size2);
-   gsl_matrix_float_memcpy(viz.viz, top->activations_);
-   gsl_matrix_float_memcpy(viz2.viz, top->expectations_);
-   viz.plot();
-   viz2.plot();
+   rbm->sample_flag = NOSAMPLE;
+   rbm->prop(FORWARD);
+   /*
+   viz.viz = gsl_matrix_float_alloc(top->activations->size1, top->activations->size2);
+   gsl_matrix_float_memcpy(viz.viz, top->activations);
+   viz.plot();*/
 }

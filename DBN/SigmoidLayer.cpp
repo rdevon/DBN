@@ -6,48 +6,43 @@
 //  Copyright 2012 __MyCompanyName__. All rights reserved.
 //
 
-
 #include "Layers.h"
+#include "IO.h"
+
 void SigmoidLayer::getExpectations(){
-   if (expectation_up_to_date) return;
    //Apply sigmoid.  Might want to pass a general functor later
-   for (int i = 0; i < nodenum_; ++i){
-      for (int j = 0; j < batchsize_; ++j){
-         float exp = sigmoid(gsl_matrix_float_get(activations_, i, j));
-         gsl_matrix_float_set(expectations_, i, j, exp);
+   for (int i = 0; i < nodenum; ++i){
+      for (int j = 0; j < batchsize; ++j){
+         float exp = sigmoid(gsl_matrix_float_get(activations, i, j));
+         gsl_matrix_float_set(expectations, i, j, exp);
       }
    }
-   expectation_up_to_date = true;
 }
 
 void SigmoidLayer::sample(){
-   if (sample_up_to_date) return;
-   for (int i = 0; i < nodenum_; ++i){
-      for (int j = 0; j < batchsize_; ++j){
+   for (int i = 0; i < nodenum; ++i){
+      for (int j = 0; j < batchsize; ++j){
          float u = gsl_rng_uniform(r);
-         float sample = (float)(gsl_matrix_float_get(expectations_, i, j) > u);
-         gsl_matrix_float_set(samples_, i, j, sample);
+         float sample = (float)(gsl_matrix_float_get(expectations, i, j) > u);
+         gsl_matrix_float_set(samples, i, j, sample);
       }
    }
-   sample_up_to_date = true;
 }
 
 void SigmoidLayer::update(ContrastiveDivergence *teacher){
-   if (learning_up_to_date) return;
    Layer::update(teacher);
 }
 
 float SigmoidLayer::reconstructionCost(gsl_matrix_float *dataMat, gsl_matrix_float *modelMat){
-   double RE = 0;
-   for (int i = 0; i < nodenum_; ++i){
-      for (int j = 0; j < batchsize_; ++j){
+   reconstruction_cost = 0;
+   for (int i = 0; i < nodenum; ++i){
+      for (int j = 0; j < batchsize; ++j){
          double dataAct = gsl_matrix_float_get(dataMat, i, j);
          double modelAct = gsl_matrix_float_get(modelMat, i, j);
-         RE += dataAct * log(modelAct) + (1-dataAct)*log(1- modelAct);
-         //std::cout << RE << " " << dataAct << " " << modelAct << std::endl;
+         reconstruction_cost -= dataAct * log(modelAct) + (1-dataAct)*log(1 - modelAct);
       }
    }
-   return (float)RE/(float)batchsize_;
+   return (float)reconstruction_cost/(float)batchsize;
 }
 
 float SigmoidLayer :: freeEnergy_contibution() {

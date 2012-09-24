@@ -7,13 +7,14 @@
 //
 
 #include "Layers.h"
+#include "IO.h"
 
 void CSoftmaxLayer::getExpectations(){
    //Apply continuous softmax.
-   for (int i = 0; i < nodenum_; ++i){
-      for (int j = 0; j < batchsize_; ++j){
-         float prob = csoftmax(gsl_matrix_float_get(activations_, i, j));
-         gsl_matrix_float_set(expectations_, i, j, prob);
+   for (int i = 0; i < nodenum; ++i){
+      for (int j = 0; j < batchsize; ++j){
+         float prob = csoftmax(gsl_matrix_float_get(activations, i, j));
+         gsl_matrix_float_set(expectations, i, j, prob);
       }
    }
 }

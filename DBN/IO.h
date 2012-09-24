@@ -9,30 +9,24 @@
 #ifndef DBN_IO_h
 #define DBN_IO_h
 #include "Types.h"
-#include <fstream>
-#include <sys/stat.h>
-#include <fstream>
-#include "dirent.h"
-#include <sstream>
-#include <gsl/gsl_statistics.h>
 
 class DataSet{
 public:
    std::string name;
-   int height, width, number, masksize_;
+   int height, width, number, masksize;
    Input_t *train, *test, *validation, *extra;
    
    bool applymask;
    bool denorm;
    
-   gsl_vector_float *meanImage_;
-   gsl_vector_float *mask_;
-   gsl_vector_float *norm_;
+   gsl_vector_float *meanImage;
+   gsl_vector_float *mask;
+   gsl_vector_float *norm;
    
    DataSet(){
-      masksize_ = 0;
-      mask_ = NULL;
-      meanImage_ = NULL;
+      masksize = 0;
+      mask = NULL;
+      meanImage = NULL;
    }
    
    void loadMNIST();

@@ -6,34 +6,25 @@
 //  Copyright 2012 __MyCompanyName__. All rights reserved.
 //
 
-#include <iostream>
 #include "Viz.h"
+#include "Layers.h"
+#include "Connections.h"
+#include "DBN.h"
 
 //BEGIN OPENGL stuff
 
-using namespace glm;
-
-GLuint _program;             //< Shader program handle
-GLuint _vao;                 //< Vertex array object for the vertices
-GLuint _vertexBuf;           //< Buffer object for the vertices
-GLuint _texCoordBuf;         //< Buffer object for the texture coordinates
-GLint  _vertexLocation;      //< Location of the vertex attribute in the shader program
-GLint  _texCoordLocation;    //< Location of the texture coordinate attribute in the shader program
-GLuint _texWeightId;         //< Texture object for the weights
 bool   _running;             //< true if the program is running, false if it is time to terminate
-GLint  _weightSamplerLoc;    //< Location of the weight texture sampler in the fragment program
-std::vector<vec4> _points;   //< List of points for the textured quad
-std::vector<vec2> _texCoords;//< Texture coordinates for the textured quad
 const char* _vertexSource =
 "#version 150\n"
 "\n"
 "in vec4 vertex;\n"
 "in vec2 texCoord;\n"
+"uniform mat4 mvp;\n"
 "out vec2 tc;\n"
 "\n"
 "void main(void)\n"
 "{\n"
-"	gl_Position = vertex;\n"
+"	gl_Position = mvp * vertex;\n"
 "  tc = texCoord;\n"
 "}\n";
 
@@ -41,15 +32,18 @@ const char* _fragmentSource =
 "#version 150\n"
 "\n"
 "uniform sampler2D weight;\n"
+"uniform vec4 color;\n"
+"uniform float scale;\n"
 "out vec4 fragColor;\n"
 "in vec2 tc;\n"
 "#extension GL_ARB_separate_shader_objects : enable\n"
 "\n"
 "void main(void)\n"
 "{\n"
-"	fragColor = vec4(1.0, 1.0, 0.0, 1.0);\n"
-"	fragColor = vec4(tc, 0, 1);\n"
 "  fragColor = texture(weight, tc);\n"
+"  if (fragColor.r <= -100) fragColor = vec4(1,1,1,1);\n"
+"  else if (fragColor.r <= -99) fragColor = vec4(.5,.5,.5,1);\n"
+"  else fragColor = fragColor.r * scale * color;\n"
 "}\n";
 
 /**
@@ -57,7 +51,7 @@ const char* _fragmentSource =
  *
  * @param exitCode      The exit code, eg, EXIT_SUCCESS or EXIT_FAILURE
  */
-void terminate(int exitCode)
+void Visualizer::terminate(int exitCode)
 {
    // Delete vertex buffer object
    if(_vertexBuf)
@@ -96,7 +90,7 @@ void terminate(int exitCode)
  * @param filename	The name of the file
  * @return			A string that contains the contents of the file
  */
-std::string readTextFile(const std::string& filename)
+std::string Visualizer::readTextFile(const std::string& filename)
 {
    std::ifstream infile(filename.c_str()); // File stream
    std::string source;                     // Text file string
@@ -127,7 +121,7 @@ std::string readTextFile(const std::string& filename)
  * @param shader     Handle to a shader
  * @return           true if the shader was compiled, false otherwise
  */
-bool shaderCompileStatus(GLuint shader)
+bool Visualizer::shaderCompileStatus(GLuint shader)
 {
    GLint compiled;
    glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
@@ -140,7 +134,7 @@ bool shaderCompileStatus(GLuint shader)
  * @param shader     Handle to a shader
  * @return           The contents of the log
  */
-std::string getShaderLog(GLuint shader)
+std::string Visualizer::getShaderLog(GLuint shader)
 {
    // Get the size of the log and allocate the required space
    GLint size;
@@ -167,7 +161,7 @@ std::string getShaderLog(GLuint shader)
  * @param shader     Handle to a shader
  * @return           true if the shader was compiled, false otherwise
  */
-bool programLinkStatus(GLuint program)
+bool Visualizer::programLinkStatus(GLuint program)
 {
    GLint linked;
    glGetProgramiv(_program, GL_LINK_STATUS, &linked);
@@ -180,7 +174,7 @@ bool programLinkStatus(GLuint program)
  * @param shader     Handle to a GLSL program
  * @return           The contents of the log
  */
-std::string getProgramLog(GLuint program)
+std::string Visualizer::getProgramLog(GLuint program)
 {
    // Get the size of the log and allocate the required space
    GLint size;
@@ -207,7 +201,7 @@ std::string getProgramLog(GLuint program)
  * @return              A handle to the shader program. 0 if an
  *                      error occured.
  */
-GLuint createShader(const std::string& source, GLenum shaderType)
+GLuint Visualizer::createShader(const std::string& source, GLenum shaderType)
 {
    GLuint shader = glCreateShader(shaderType);
    
@@ -228,7 +222,7 @@ GLuint createShader(const std::string& source, GLenum shaderType)
  * @param  fShaderFile   The fragment shader filename
  * @return handle to the GLSL program
  */
-GLuint createGLSLProgram()
+GLuint Visualizer::createGLSLProgram()
 {
    std::string vertexSource(_vertexSource);
    std::string fragmentSource(_fragmentSource);
@@ -279,7 +273,7 @@ GLuint createGLSLProgram()
  * Initialize vertex array objects, vertex buffer objects,
  * clear color and depth clear value
  */
-void init(void)
+void Visualizer::init(int num_tex_maps, int num_line_plots)
 {
 #ifndef __APPLE__
    // GLEW has trouble supporting the core profile
@@ -292,16 +286,16 @@ void init(void)
    }
 #endif
    // Vertices for the textured quad
-   _points.push_back(vec4(-1, -1, 0, 1));
-   _points.push_back(vec4(-1,  1, 0, 1));
-   _points.push_back(vec4( 1, -1, 0, 1));
-   _points.push_back(vec4( 1,  1, 0, 1));
+   _points.push_back(glm::vec4(-1, -1, 0, 1));
+   _points.push_back(glm::vec4(-1,  1, 0, 1));
+   _points.push_back(glm::vec4( 1, -1, 0, 1));
+   _points.push_back(glm::vec4( 1,  1, 0, 1));
    
    // Texture coordinates for the textured quad
-   _texCoords.push_back(vec2(0,1));
-   _texCoords.push_back(vec2(0,0));
-   _texCoords.push_back(vec2(1,1));
-   _texCoords.push_back(vec2(1,0));
+   _texCoords.push_back(glm::vec2(0,1));
+   _texCoords.push_back(glm::vec2(0,0));
+   _texCoords.push_back(glm::vec2(1,1));
+   _texCoords.push_back(glm::vec2(1,0));
    
    // Create the shader program
    _program = createGLSLProgram();
@@ -316,9 +310,12 @@ void init(void)
    glBindVertexArray(_vao);
    
    // Get the location of the "vertex" attribute in the shader program
+   _colorLocation = glGetUniformLocation(_program, "color");
+   _scaleLocation = glGetUniformLocation(_program, "scale");
    _vertexLocation = glGetAttribLocation(_program, "vertex");
    _texCoordLocation = glGetAttribLocation(_program, "texCoord");
    _weightSamplerLoc = glGetUniformLocation(_program, "weight");
+   _mvpLocation = glGetUniformLocation(_program, "mvp");
    
    // Generate one handle for the vertex buffer object
    glGenBuffers(1, &_vertexBuf);
@@ -333,7 +330,7 @@ void init(void)
    
    // Set the data for the vbo. This will load it onto the GPU
    glBufferData(GL_ARRAY_BUFFER,                // Target buffer object
-                sizeof(vec4) * _points.size(),  // Size in bytes of the buffer
+                sizeof(glm::vec4) * _points.size(),  // Size in bytes of the buffer
                 (GLfloat*) &_points[0],         // Pointer to the data
                 GL_STATIC_DRAW);                // Expected data usage pattern
    
@@ -353,7 +350,7 @@ void init(void)
    glBindBuffer(GL_ARRAY_BUFFER, _texCoordBuf);
    // Set the data for the vbo. This will load it onto the GPU
    glBufferData(GL_ARRAY_BUFFER,                // Target buffer object
-                sizeof(vec2) * _texCoords.size(),  // Size in bytes of the buffer
+                sizeof(glm::vec2) * _texCoords.size(),  // Size in bytes of the buffer
                 (GLfloat*) &_texCoords[0],         // Pointer to the data
                 GL_STATIC_DRAW);                // Expected data usage pattern
    
@@ -388,21 +385,31 @@ void init(void)
          texels[i][j][3] = 1.0f;
       }
    }
-   glGenTextures(1, &_texWeightId);
-   glBindTexture(GL_TEXTURE_2D, _texWeightId);
    
-   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _texWidth, _texHeight, 0, GL_RGBA, GL_FLOAT, texels);
-   GL_ERR_CHECK();
-   glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
-   GL_ERR_CHECK();
-   glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
-   GL_ERR_CHECK();
-   glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-   GL_ERR_CHECK();
-   glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-   GL_ERR_CHECK();
-   glActiveTexture(GL_TEXTURE0);
-   GL_ERR_CHECK();
+   _texID.resize(num_tex_maps);
+   glGenTextures(num_tex_maps, &_texID[0]);
+   
+   for(size_t i = 0; i < _texID.size(); ++i)
+   {
+      glBindTexture(GL_TEXTURE_2D, _texID[i]);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _texWidth, _texHeight, 0, GL_RGBA, GL_FLOAT, texels);
+      GL_ERR_CHECK();
+      glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
+      GL_ERR_CHECK();
+      glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+      GL_ERR_CHECK();
+      glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR ); // GL_NEAREST for no interpolation, GL_LINEAR for interpolation
+      GL_ERR_CHECK();
+      glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+      GL_ERR_CHECK();
+      glBindTexture(GL_TEXTURE_2D, 0);
+   }
+   
+   // Generate VAO and buffer objects for line plots
+   _lineVAO.resize(num_line_plots);
+   _lineBO.resize(num_line_plots);
+   glGenVertexArrays(GLsizei(_lineVAO.size()), &_lineVAO[0]);
+   glGenBuffers(GLsizei(_lineBO.size()), &_lineBO[0]);
    
    // Set the clear color
    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -455,84 +462,89 @@ int GLFWCALL close(void)
  * Main loop
  * @param time    time elapsed in seconds since the start of the program
  */
-int update(double time)
-{
-   
-   // Clear the color and depth buffers
-   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-   
-   glBindVertexArray(_vao);
-   glBindTexture(GL_TEXTURE_2D, _texWeightId);
-   // Draw the triangle.
-   glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)_points.size());
-   
-   glfwSwapBuffers();
 
-   return GL_TRUE;
+
+int Visualizer::update_tex_unit(Unit_Monitor *gl_unit, int id)
+{
+   glBindTexture(GL_TEXTURE_2D, _texID[id]);
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, gl_unit->x_size, gl_unit->y_size, gl_unit->z_size, GL_RED, GL_FLOAT, gl_unit->viz_matrix->data);
+   //GL_ERR_CHECK();
+   
+   glm::mat4 mvp;
+   
+   mvp = glm::translate(glm::mat4(), glm::vec3(gl_unit->x_position, gl_unit->y_position, gl_unit->z_position)) * glm::scale(glm::mat4(), glm::vec3(gl_unit->scale*gl_unit->x_size, gl_unit->scale*gl_unit->y_size, gl_unit->scale*gl_unit->z_size));
+   
+   glUseProgram(_program);
+   glBindVertexArray(_vao);
+   
+   glActiveTexture(GL_TEXTURE0);
+   glUniformMatrix4fv(_mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
+   glUniform4fv(_colorLocation, 1, gl_unit->color);
+   glUniform1f(_scaleLocation, gl_unit->value_scale);
+   glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)_points.size());
+}
+
+int Visualizer::update_line_units(Unit_Monitor *gl_unit, int id){
+   
+   // Draw some line plots
+   std::vector<glm::vec4> _lineData(4);
+   
+   int x = 0;
+   for (auto y:gl_unit->plot_vector){
+      _lineData.push_back(glm::vec4(.1*x,2*y,0,1));
+      ++x;
+   }
+   
+   glUseProgram(_program);
+   glBindVertexArray(_lineVAO[id]);
+   glBindBuffer(GL_ARRAY_BUFFER, _lineBO[id]);
+   // copy data to gpu
+   glBufferData(GL_ARRAY_BUFFER, _lineData.size() * sizeof(glm::vec4), &_lineData[0], GL_STATIC_DRAW);
+   // Tell OpenGL where the beginning of the buffer starts for this attribute
+   glVertexAttribPointer(_vertexLocation, 4, GL_FLOAT, GL_FLOAT, 0, NULL);
+   
+   glm::mat4 mvp = glm::translate(glm::mat4(), glm::vec3(gl_unit->x_position, gl_unit->y_position, gl_unit->z_position)) * glm::scale(glm::mat4(), glm::vec3(.1, 0.1/(gl_unit->plot_vector[0]), .1));
+   glUniformMatrix4fv(_mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
+   
+   glUniform4fv(_colorLocation, 1, gl_unit->color);
+   glUniform1f(_scaleLocation, gl_unit->value_scale);
+   // Enable the generic vertex attribute array
+   glEnableVertexAttribArray(_vertexLocation);
+   glDrawArrays(GL_LINE_STRIP, 0, GLsizei(_lineData.size()));
+   
 }
 
 //END OPENGL stuff
 
-void Visualizer::add(gsl_vector_float *sample){
+int Visualizer::update(Learning_Monitor *learning_monitor){
+   glfwGetTime();
    
-   /*if (data_->denorm) {
-      gsl_vector_float_mul(sample, data_->norm_);
-   }*/
+   glClearColor(1, 1, 1, 1);
+   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
    
-   gsl_vector_float_scale(sample, scale);
-   
-   for (int i = 0; i < sample->size; ++i){
-      if (gsl_vector_float_get(sample, i) < 0.2)
-         gsl_vector_float_set(sample, i, -10);
+   for (std::map<int, Unit_Monitor*>::iterator gl_iter = learning_monitor->tex_units.begin(); gl_iter != learning_monitor->tex_units.end(); ++gl_iter){
+      int id = (*gl_iter).first;
+      Unit_Monitor *gl_unit = (*gl_iter).second;
+      gl_unit->load_viz();
+      update_tex_unit(gl_unit, id);
    }
    
-   if (data_->applymask){
-      sample = data_->applyMask(sample);
+   for (std::map<int, Unit_Monitor*>::iterator gl_iter = learning_monitor->line_units.begin(); gl_iter != learning_monitor->line_units.end(); ++gl_iter){
+      int id = (*gl_iter).first;
+      Unit_Monitor *gl_unit = (*gl_iter).second;
+      gl_unit->load_viz();
+      update_line_units(gl_unit, id);
    }
    
+   glfwSwapBuffers();
    
-   int i = (count/across)*imageH;
-   int j = count%across*imageW;
+   glUseProgram(0);
    
-   for (int ii = 0; ii < imageH; ++ii)
-      for (int jj = 0; jj < imageW; ++jj)
-      {
-         float val;
-         //if (ii == 0 || ii == imageH || jj == 0 || jj == imageW) val = .2;
-         //else
-         val = gsl_vector_float_get(sample, (jj+ii*imageW));
-         gsl_matrix_float_set(viz, i+ii, j+jj, val);
-      }
-
-   count = (count+1)%(across*down);
+   return GL_TRUE;
 }
 
-void Visualizer::clear(){
-   gsl_matrix_float_set_zero(viz);
-   count = 0;
-}
-
-void Visualizer::plot(){
-   std::string filepath = plotpath + name + "viz.plot";
-   FILE *file_handle;
-   file_handle = fopen(filepath.c_str(), "w");
+void Visualizer::open_window(int width, int height){
    
-   for (int i = 0; i < viz->size1; ++i){
-      for (int j = 0; j < viz->size2; ++j){
-         float val = gsl_matrix_float_get(viz, i, j);
-         fprintf(file_handle, "%f ", val);
-      }
-      fprintf(file_handle, "\n");
-   }
-   
-   fflush(file_handle);
-   fclose(file_handle);
-}
-
-void Visualizer::initViz(){
-   
-   int width = 1000;
-   int height = 1000;
    // Initialize GLFW
    _running = true;
    glfwInit();
@@ -553,31 +565,244 @@ void Visualizer::initViz(){
    glfwSetWindowSizeCallback(resize);
    glfwSetKeyCallback(keypress);
    glfwSetWindowCloseCallback(close);
-
-   init();
-}
-
-void Visualizer::updateViz(){
-//   viz->data
    
-   glBindTexture(GL_TEXTURE_2D, _texWeightId);
-   
-   glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, imageW * across, imageH * down, 0, GL_RED, GL_FLOAT, viz->data);
-   GL_ERR_CHECK();
-   glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
-   GL_ERR_CHECK();
-   glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
-   GL_ERR_CHECK();
-   glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-   GL_ERR_CHECK();
-   glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-   GL_ERR_CHECK();
-   glActiveTexture(GL_TEXTURE0);
-   GL_ERR_CHECK();
-
-   update(glfwGetTime());
 }
 
 void Visualizer::close_window(){
    GLFWCALL close();
+}
+
+void Learning_Monitor::update() {
+   
+   viz->update(this);
+}
+
+// FOR UNIT MONITORS ------------------------------------------------------------------
+
+Connection_Learning_Monitor::Connection_Learning_Monitor(Connection* connection){
+   Layer *bot = (Layer*)connection->from;
+   Layer *top = (Layer*)connection->to;
+   bot_sample_monitor = new Layer_Sample_Monitor(bot,.005);
+   top_sample_monitor = new Layer_Sample_Monitor(top,.01);
+   con_weight_monitor = new Connection_Weight_Monitor(connection, 20, 5,.002, 1,0);
+   
+   top_bias_monitor   = new Layer_Bias_Monitor(top, .005);
+   
+   rec_cost_monitor   = new Reconstruction_Cost_Monitor(bot);
+   
+   bot_sample_monitor->set_coords(-.55, -.7, 0);
+   con_weight_monitor->set_coords(-.4, .2, 0);
+   top_sample_monitor->set_coords(-.6, .8, 0);
+   
+   top_bias_monitor->set_coords(-.3, .8, 0);
+   
+   rec_cost_monitor->set_coords(-.1, -.8, 0);
+   
+   tex_units[TOP_SAMPLES] = top_sample_monitor;
+   tex_units[BOT_SAMPLES] = bot_sample_monitor;
+   tex_units[CONNECTION_WEIGHTS] = con_weight_monitor;
+   tex_units[TOP_BIASES] = top_bias_monitor;
+   line_units[REC_COST_PLOT] = rec_cost_monitor;
+   viz->init(NUM_TEX_MAPS, NUM_LINE_PLOTS);
+}
+
+void Unit_Monitor::load_viz(){}
+
+Layer_Bias_Monitor::Layer_Bias_Monitor (Layer* layer, float sc) : Unit_Monitor(layer->nodenum, (layer->nodenum), sc){
+   unit = layer;
+   unit->monitor = this;
+   name = "layer biases";
+   
+   unit->image_pixels_x= 1;
+   unit->image_pixels_y= 1;
+   finish_setup();
+}
+
+
+void Layer_Bias_Monitor::load_viz(){
+   clear_viz();
+   
+   Layer *layer = (Layer*)unit;
+   
+   float min_bias, max_bias;
+   gsl_vector_float_minmax(layer->biases, &min_bias, &max_bias);
+   
+   gsl_matrix_float_set_zero(viz_matrix);
+   float max_abs_bias = fmaxf(max_bias, -min_bias);
+   
+   for (int i = 0; i < pieces_down; ++i) {
+      float bias_position = (float(i-pieces_down/2)/float(pieces_down/2))*max_abs_bias;
+      for (int j = 0; j < pieces_across; ++j) {
+         float bias = gsl_vector_float_get(layer->biases, j);
+         if (bias >= bias_position && bias_position >=0) gsl_matrix_float_set(viz_matrix, i, j, 1);
+         else if (bias <= bias_position && bias_position <= 0) gsl_matrix_float_set(viz_matrix, i, j, 1);
+      }
+   }
+}
+
+Layer_Sample_Monitor::Layer_Sample_Monitor (Layer* layer, float sc) : Unit_Monitor(1,1,sc){
+   unit = layer;
+   unit->monitor = this;
+   name = "layer samples";
+   
+   if (layer->input_edge != NULL) {
+      unit->image_pixels_x = layer->input_edge->input_x;
+      unit->image_pixels_y = layer->input_edge->input_y;
+   }
+   else {
+      unit->image_pixels_x = layer->nodenum;
+      unit->image_pixels_y = 1;
+   }
+   
+   finish_setup();
+}
+void Layer_Sample_Monitor::load_viz(){
+   clear_viz();
+   Layer *layer = (Layer*)unit;
+   gsl_matrix_float_get_col(layer->sample_vector, layer->expectations, 0);
+   if (layer->input_edge != NULL) {
+      layer->input_edge->apply_mask(layer->sample_vector, viz_vector);
+   }
+   else {
+      for (int i = 0; i < layer->sample_vector->size; ++i) {
+         float val = gsl_vector_float_get(layer->sample_vector, i);
+         gsl_vector_float_set(viz_vector, i, val);
+      }
+   }
+   
+   add_viz_vector();
+}
+
+Connection_Weight_Monitor::Connection_Weight_Monitor (Connection* connection, int across, int down, float sc, float v_scale, float thresh)
+: Unit_Monitor(across, down, sc, v_scale, thresh) {
+   unit = connection;
+   unit->monitor = this;
+   name = "connection weights";
+   
+   if (connection->from->input_edge != NULL) {
+      unit->image_pixels_x = connection->from->input_edge->input_x, unit->image_pixels_y = connection->from->input_edge->input_y;
+   }
+   else {
+      unit->image_pixels_x = ((Layer*)connection->from)->nodenum;
+      unit->image_pixels_y = ((Layer*)connection->to)->nodenum;
+   }
+   finish_setup();
+}
+
+void Connection_Weight_Monitor::load_viz(){
+   Connection *connection = (Connection*)unit;
+   clear_viz();
+   
+   for (int i = 0; i < connection->weights->size1; ++i) {
+      gsl_matrix_float_get_row(connection->node_projections, connection->weights, i);
+      if (connection->from->input_edge != NULL) connection->from->input_edge->apply_mask(connection->node_projections, viz_vector);
+      add_viz_vector();
+   }
+}
+
+Pathway_Monitor::Pathway_Monitor (Pathway* pathway, int across, int down, float sc, float v_scale, float thresh)
+: Unit_Monitor(pieces_across, pieces_down, threshold) {
+   unit = pathway;
+   unit->monitor = this;
+   name = "pathway samples";
+   
+   Layer *base = (Layer*)pathway->path[0]->from;
+   
+   if (base->input_edge != NULL) {
+      unit->image_pixels_x = base->input_edge->input_x;
+      unit->image_pixels_y = base->input_edge->input_y;
+   }
+   else {
+      unit->image_pixels_x = sqrt(base->nodenum);
+      unit->image_pixels_y = (base->nodenum + unit->image_pixels_x + 1)/unit->image_pixels_x;
+   }
+   
+   finish_setup();
+}
+
+void Pathway_Monitor::load_viz(){
+   clear_viz();
+   Pathway *pathway = (Pathway*)unit;
+   pathway->set_status_all(WAITING);
+   pathway->first = pathway->path[0];
+   if (pathway->last == NULL) pathway->last = pathway->path.back();;
+   
+   Layer *top = (Layer*)pathway->last->to;
+   top->status = DONE;
+   Layer *bot = (Layer*)pathway->first->from;
+   int old_batch = top->batchsize;
+   pathway->make_batch(top->nodenum);
+   gsl_matrix_float_set_identity(top->samples);
+   pathway->transmit_down();
+   
+   for (int j = 0; j < top->nodenum; ++j){
+      gsl_matrix_float_get_col(viz_vector, bot->samples, j);
+      add_viz_vector();
+   }
+   pathway->make_batch(old_batch);
+}
+
+Reconstruction_Cost_Monitor::Reconstruction_Cost_Monitor(Layer *layer){
+   unit = layer;
+   unit->monitor = this;
+   name = "layer reconstruction cost";
+}
+
+void Reconstruction_Cost_Monitor::load_viz(){
+   Layer *layer = (Layer*)unit;
+   plot_vector.push_back(layer->reconstruction_cost);
+   color[0] = 1, color[1] = 0, color[2] = 0, color[3] = 1;
+   x_size = y_size = z_size = 1;
+}
+
+void Unit_Monitor::add_viz_vector(){
+   
+   for (int i = 0; i < viz_vector->size; ++i){
+      float value = gsl_vector_float_get(viz_vector, i);
+      if (value < threshold && value != WHITE)
+         gsl_vector_float_set(viz_vector, i, GREY);
+   }
+   
+   int i = (piece_count/pieces_across)*unit->image_pixels_y;
+   int j = piece_count%pieces_across*unit->image_pixels_x;
+   
+   for (int ii = 0; ii < unit->image_pixels_y; ++ii)
+      for (int jj = 0; jj < unit->image_pixels_x; ++jj)
+      {
+         float val;
+         val = gsl_vector_float_get(viz_vector, (jj+ii*unit->image_pixels_x));
+         gsl_matrix_float_set(viz_matrix, i+ii, j+jj, val);
+      }
+   piece_count = (piece_count+1)%(pieces_across*pieces_down);
+}
+
+void Unit_Monitor::clear_viz(){
+   gsl_matrix_float_set_zero(viz_matrix);
+   gsl_vector_float_set_zero(viz_vector);
+   piece_count = 0;
+}
+
+void Unit_Monitor::finish_setup(){
+   viz_vector = gsl_vector_float_alloc((unit->image_pixels_x)*(unit->image_pixels_y));
+   viz_matrix = gsl_matrix_float_calloc(unit->image_pixels_y*pieces_down, unit->image_pixels_x*pieces_across);
+   x_size = (int)viz_matrix->size2;
+   y_size = (int)viz_matrix->size1;
+   z_size = 0;
+   color[0] = 1, color[1] = 0, color[2] = 0, color[3] = 1;
+}
+
+void Unit_Monitor::plot(){
+   std::string filepath = plotpath + name + "viz.plot";
+   FILE *file_handle;
+   file_handle = fopen(filepath.c_str(), "w");
+   
+   for (int i = 0; i < viz_matrix->size1; ++i){
+      for (int j = 0; j < viz_matrix->size2; ++j){
+         float val = gsl_matrix_float_get(viz_matrix, i, j);
+         fprintf(file_handle, "%f ", val);
+      }
+      fprintf(file_handle, "\n");
+   }
+   fflush(file_handle);
+   fclose(file_handle);
 }

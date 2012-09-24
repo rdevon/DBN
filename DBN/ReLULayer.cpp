@@ -7,30 +7,29 @@
 //
 
 #include "Layers.h"
+#include "IO.h"
 
 void ReLULayer::getExpectations(){
-   if (expectation_up_to_date) return;
    //Apply softplus.  Might want to pass a general functor later
-   for (int i = 0; i < nodenum_; ++i){
-      for (int j = 0; j < batchsize_; ++j){
-         float act = gsl_matrix_float_get(activations_, i, j);
+   for (int i = 0; i < nodenum; ++i){
+      for (int j = 0; j < batchsize; ++j){
+         float act = gsl_matrix_float_get(activations, i, j);
          float prob;
          //if (act < 100)
             prob = softplus(act);
          //else prob = act;
-         gsl_matrix_float_set(expectations_, i, j, prob);
+         gsl_matrix_float_set(expectations, i, j, prob);
       }
    }
 }
 
 void ReLULayer::sample(){
-   if (sample_up_to_date) return;
    // Sample = max(0, x+N(0,sigmoid(x)))
-   for (int i = 0; i < nodenum_; ++i){
-      for (int j = 0; j < batchsize_; ++j){
-         float exp = gsl_matrix_float_get(expectations_, i, j);
+   for (int i = 0; i < nodenum; ++i){
+      for (int j = 0; j < batchsize; ++j){
+         float exp = gsl_matrix_float_get(expectations, i, j);
          float sam = fmaxf(0, exp + gsl_ran_gaussian(r, sigmoid(exp)));
-         gsl_matrix_float_set(samples_, i, j, sam);
+         gsl_matrix_float_set(samples, i, j, sam);
       }
    }
    //print_gsl(expectations_);
@@ -38,7 +37,6 @@ void ReLULayer::sample(){
 }
 
 void ReLULayer::update(ContrastiveDivergence *teacher){
-   if (learning_up_to_date) return;
    Layer::update(teacher);
 }
 

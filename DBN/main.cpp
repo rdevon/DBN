@@ -7,14 +7,14 @@
 //
 
 #include <iostream>
-#include "RBM.h"
-#include "Connections.h"
-#include "Viz.h"
-#include "IO.h"
 #include "Types.h"
-#include "Timecourses.h"
 #include "gsl/gsl_sort_vector.h"
 #include "gsl/gsl_permute.h"
+#include "IO.h"
+#include "Layers.h"
+#include "Connections.h"
+#include "RBM.h"
+#include "Viz.h"
 
 int main (int argc, const char * argv[])
 {
@@ -29,60 +29,71 @@ int main (int argc, const char * argv[])
    //--------------
    //LOAD DATASET and INIT
    
-   DataSet data1,data2;
-   data1.loadfMRI();
-   data2.loadstim();
+   DataSet data1;
+   data1.loadMNIST();
    //---------DONE INIT
    //--------- GSL TESTS GO HERE ----------------
    
    //INIT RBM
    
-   GaussianLayer baselayer((int)data1.train->size2);
-   SigmoidLayer stimuluslayer((int)data2.train->size2);
-   ReLULayer hiddenlayer(16);
+   SigmoidLayer baselayer((int)data1.train->size2);
+   baselayer.shapeInput(&data1);
+   //SigmoidLayer stimuluslayer((int)data2.train->size2);
+   SigmoidLayer hiddenlayer(100);
+   //ReLULayer hiddenlayer2(16);
+   
+   InputEdge ie1(&data1);
+   //InputEdge ie2(&data2);
+   
+   baselayer.input_edge = &ie1;
+   //stimuluslayer.input_edge = &ie2;
    
    Connection c1(&baselayer, &hiddenlayer);
-   c1.learning_rate_ = 0.000008;
-   c1.decay_ = 0.0002;
-   Connection c2(&stimuluslayer, &hiddenlayer);
-   c2.learning_rate_ = 0.000008;
-   c2.decay_ = 0.0002;
+   c1.learning_rate = 0.01;
+   c1.decay = 0;
+   //Connection c2(&stimuluslayer, &hiddenlayer);
+   //c2.learning_rate = 0.0000008;
+   //c2.decay = 0.000002;
    
-   RBM rbm(&c1, &c2);
-   
-   ReLULayer h2(10);
-   
-   Connection c3(&hiddenlayer, &h2);
-   RBM rbm2(&c3);
-   
-   rbm.load_DS(&data1, &data2);
+   //Connection c3(&hiddenlayer, &hiddenlayer2);
+   //c3.learning_rate = 0.00001;
+   //c3.decay = 0.000001;
    
    //--------------
-   float momentum = 0.65;
+   float momentum = 0;
    float k = 1;
-   float sparsitytarget = 0.1;
-   float decayrate = 0.9;
-   float sparsitycost = 0;
-   float batchsize = 1;
+   float batchsize = 10;
+   float epochs = 500;
    
    //LEARNING!!!!!!!!!
-   ContrastiveDivergence cdLearner(&rbm, momentum, k, sparsitytarget, decayrate, sparsitycost, batchsize);
+   ContrastiveDivergence cdLearner(momentum, k, batchsize, epochs);
+   Connection_Learning_Monitor monitor(&c1);
+   cdLearner.monitor = &monitor;
+   
+   RBM rbm;
+   rbm.add_connection(&c1);
    rbm.teacher = &cdLearner;
+   rbm.learn();
    
-   for (int epoch = 1; epoch < 1000; ++epoch){
-      std::cout << "Epoch " << epoch << std::endl;
-      rbm.learn();
-      //cdLearner.learningRate_ *= .95;
-   }
+   /*
+   DBN dbn;
+   dbn.add_connection(&c1);
+   dbn.add_connection(&c3);
+   dbn.teacher = &cdLearner;
    
-   print_gsl(c1.top_->biases_);
+   dbn.finish_setup();
+   
+   dbn.pathways[0]->setup_viz();
+   
+   dbn.viz = (dbn.pathways[0])->viz;
+   dbn.viz->initViz();
+   dbn.viz->thresh = .02;
+   
+   dbn.viz->scale = 1;
+   dbn.learn();
    
    std::cout << "Done Learning! " << std::endl;
-   
-   get_timecourses(&rbm, &data1);
-   
-   rbm.visualize(0, 5);
-    
+    */
    
    return 0; 
 }

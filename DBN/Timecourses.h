@@ -10,10 +10,11 @@
 #define __DBN__Timecourses__
 
 #include <iostream>
-#include "RBM.h"
-#include "Viz.h"
-#include "IO.h"
 
-void get_timecourses(RBM *rbm, DataSet *data);
+class RBM;
+class Connection;
+class DataSet;
+
+void get_timecourses(RBM *rbm, Connection* connection, DataSet *data);
 
 #endif /* defined(__DBN__Timecourses__) */

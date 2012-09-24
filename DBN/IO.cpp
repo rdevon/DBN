@@ -6,7 +6,6 @@
 //  Copyright 2012 __MyCompanyName__. All rights reserved.
 //
 
-#include <iostream>
 #include "IO.h"
 
 void DataSet::loadMNIST(){
@@ -15,8 +14,8 @@ void DataSet::loadMNIST(){
    
    name = "MNIST";
    
-   meanImage_ = NULL;
-   mask_ = NULL;
+   meanImage = NULL;
+   mask = NULL;
    
    std::string trainfile = MNISTpath + "train-images.idx3-ubyte";
    std::string testfile = MNISTpath + "t10k-images.idx3-ubyte";
@@ -30,7 +29,6 @@ void DataSet::loadMNIST(){
    fread(&imageNum, sizeof(imageNum), 1, file_handle);
    fread(&rowNum, sizeof(rowNum), 1, file_handle);
    fread(&colNum, sizeof(colNum), 1, file_handle);
-   
    
    magicnumber = ntohl(magicnumber);
    imageNum = ntohl(imageNum);
@@ -210,17 +208,17 @@ void DataSet::loadstim(){
 
 
 void DataSet::removeMeanImage(){
-   meanImage_ = gsl_vector_float_calloc(train->size2);
+   meanImage = gsl_vector_float_calloc(train->size2);
    gsl_vector_float *sample = gsl_vector_float_alloc(train->size2);
    for (int i = 0; i < train->size1; ++i){
       gsl_matrix_float_get_row(sample, train, i);
-      gsl_vector_float_add(meanImage_, sample);
+      gsl_vector_float_add(meanImage, sample);
    }
-   gsl_vector_float_scale(meanImage_, (float)1/(float)train->size1);
+   gsl_vector_float_scale(meanImage, (float)1/(float)train->size1);
    
    for (int i = 0; i < train->size1; ++i){
       gsl_matrix_float_get_row(sample, train, i);
-      gsl_vector_float_sub(sample, meanImage_);
+      gsl_vector_float_sub(sample, meanImage);
       gsl_matrix_float_set_row(train, i, sample);
    }
    
@@ -229,24 +227,24 @@ void DataSet::removeMeanImage(){
 
 void DataSet::removeMask(){
    int count = 0;
-   float mean = gsl_stats_float_mean(meanImage_->data, meanImage_->stride, meanImage_->size);
-   for (int i = 0; i < meanImage_->size; ++i) count += (gsl_vector_float_get(meanImage_, i) > mean);
+   float mean = gsl_stats_float_mean(meanImage->data, meanImage->stride, meanImage->size);
+   for (int i = 0; i < meanImage->size; ++i) count += (gsl_vector_float_get(meanImage, i) > mean);
    
    gsl_matrix_float *newtrain = gsl_matrix_float_alloc(number, count);
    
-   mask_ = gsl_vector_float_alloc(height*width);
-   masksize_ = height*width-count;
+   mask = gsl_vector_float_alloc(height*width);
+   masksize = height*width-count;
    
    for (int j = 0; j < height*width; ++j){
-      float val = gsl_vector_float_get(meanImage_, j);
-      if (val > mean) gsl_vector_float_set(mask_, j, 1);
-      else gsl_vector_float_set(mask_, j, 0);
+      float val = gsl_vector_float_get(meanImage, j);
+      if (val > mean) gsl_vector_float_set(mask, j, 1);
+      else gsl_vector_float_set(mask, j, 0);
    }
    
    for (int i = 0; i < number; ++i){
       int jprime = 0;
       for (int j = 0; j < height*width; ++j){
-         float maskval = gsl_vector_float_get(mask_, j);
+         float maskval = gsl_vector_float_get(mask, j);
          if (maskval == 1) {
             float val = gsl_matrix_float_get(train, i, j);
             gsl_matrix_float_set(newtrain, i, jprime, val);
@@ -260,9 +258,9 @@ void DataSet::removeMask(){
 }
 
 gsl_vector_float *DataSet::applyMask(gsl_vector_float *v){
-   gsl_vector_float *newv = gsl_vector_float_calloc(v->size + masksize_);
+   gsl_vector_float *newv = gsl_vector_float_calloc(v->size + masksize);
    for (int i = 0, iprime = 0; i < newv->size; ++i) {
-      float maskval = gsl_vector_float_get(mask_, i);
+      float maskval = gsl_vector_float_get(mask, i);
       if (maskval == 1) {
          float val = gsl_vector_float_get(v, iprime);
          gsl_vector_float_set(newv, i, val);

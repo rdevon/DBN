@@ -11,6 +11,7 @@
 		0023B68415C5BFF000CA4B4E /* Types.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0023B68315C5BFF000CA4B4E /* Types.cpp */; };
 		0023B68815C6EEAF00CA4B4E /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0023B68715C6EEAF00CA4B4E /* Cocoa.framework */; };
 		0023B68A15C6EEC900CA4B4E /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0023B68915C6EEC900CA4B4E /* OpenGL.framework */; };
+		002F162015EFF9C1001A646B /* MLP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 002F161E15EFF9C1001A646B /* MLP.cpp */; };
 		0033BD6015EC21C30047BB2B /* DBN.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0033BD5E15EC21C20047BB2B /* DBN.cpp */; };
 		005D2A2815ACE25D007D675F /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 005D2A2715ACE25D007D675F /* main.cpp */; };
 		005D2A2A15ACE25D007D675F /* DBN.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 005D2A2915ACE25D007D675F /* DBN.1 */; };
@@ -48,6 +49,8 @@
 		0023B68615C6ECB000CA4B4E /* opengl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = opengl.h; sourceTree = "<group>"; };
 		0023B68715C6EEAF00CA4B4E /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		0023B68915C6EEC900CA4B4E /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
+		002F161E15EFF9C1001A646B /* MLP.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MLP.cpp; sourceTree = "<group>"; };
+		002F161F15EFF9C1001A646B /* MLP.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MLP.h; sourceTree = "<group>"; };
 		0033BD5E15EC21C20047BB2B /* DBN.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DBN.cpp; sourceTree = "<group>"; };
 		0033BD5F15EC21C30047BB2B /* DBN.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DBN.h; sourceTree = "<group>"; };
 		005D2A2315ACE25D007D675F /* DBN */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DBN; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -114,38 +117,104 @@
 			isa = PBXGroup;
 			children = (
 				005D2A2715ACE25D007D675F /* main.cpp */,
-				005DA21E15DD6717001384D0 /* GradientDescent.h */,
-				005DA21D15DD6717001384D0 /* GradientDescent.cpp */,
-				0023B68615C6ECB000CA4B4E /* opengl.h */,
-				0033BD5F15EC21C30047BB2B /* DBN.h */,
-				0033BD5E15EC21C20047BB2B /* DBN.cpp */,
-				008E1DA315BDCD6000E14290 /* Viz.h */,
-				00E9CF9915BF5E8100BFA559 /* Viz.cpp */,
-				008E1DA415BDE99300E14290 /* IO.h */,
-				008E1DA515BDEB8000E14290 /* IO.cpp */,
-				0084D75215DDB7F50003BA78 /* Timecourses.h */,
-				0084D75115DDB7F50003BA78 /* Timecourses.cpp */,
-				00A89FA915D5C15E00159C58 /* Teacher.h */,
-				00A89FA815D5C15E00159C58 /* Teacher.cpp */,
-				00F7665215B86AC400D1364E /* RBM.h */,
-				00F7665315B86AD500D1364E /* RBM.cpp */,
-				005DA21A15DC2703001384D0 /* Connections.h */,
-				005DA21915DC2703001384D0 /* Connections.cpp */,
+				00BADC20160BBD6500A48208 /* Monitors/Visualization */,
+				00BADC1F160BBD5600A48208 /* IO */,
+				00BADC1D160BBD2A00A48208 /* Learners */,
+				00BADC1B160BAB1100A48208 /* Extra */,
+				00BADC1E160BBD3C00A48208 /* MLP */,
+				00BADC1A160BAAF100A48208 /* Connections */,
+				00BADC18160BAADE00A48208 /* Layers */,
+				00BADC1C160BAB1C00A48208 /* Support */,
+				005D2A2915ACE25D007D675F /* DBN.1 */,
+			);
+			path = DBN;
+			sourceTree = "<group>";
+		};
+		00BADC18160BAADE00A48208 /* Layers */ = {
+			isa = PBXGroup;
+			children = (
 				005D2A3015ACE26F007D675F /* Layers.h */,
 				00F8581515B70F1900BBBD53 /* Layers.cpp */,
 				00F8581815B70F2D00BBBD53 /* SigmoidLayer.cpp */,
 				000BD30315D1996E004C59BF /* CSoftmaxLayer.cpp */,
 				00BACCCF15D0386B000D52EB /* GaussianLayer.cpp */,
 				00BACCD315D04438000D52EB /* ReLULayer.cpp */,
+			);
+			name = Layers;
+			sourceTree = "<group>";
+		};
+		00BADC1A160BAAF100A48208 /* Connections */ = {
+			isa = PBXGroup;
+			children = (
+				005DA21A15DC2703001384D0 /* Connections.h */,
+				005DA21915DC2703001384D0 /* Connections.cpp */,
+			);
+			name = Connections;
+			sourceTree = "<group>";
+		};
+		00BADC1B160BAB1100A48208 /* Extra */ = {
+			isa = PBXGroup;
+			children = (
+				005DA21E15DD6717001384D0 /* GradientDescent.h */,
+				005DA21D15DD6717001384D0 /* GradientDescent.cpp */,
+				0084D75215DDB7F50003BA78 /* Timecourses.h */,
+				0084D75115DDB7F50003BA78 /* Timecourses.cpp */,
+			);
+			name = Extra;
+			sourceTree = "<group>";
+		};
+		00BADC1C160BAB1C00A48208 /* Support */ = {
+			isa = PBXGroup;
+			children = (
 				00F7664F15B867F900D1364E /* SupportMath.h */,
 				00F7665015B8680500D1364E /* SupportMath.cpp */,
 				00F7665B15B9EB0000D1364E /* SupportFunctions.h */,
 				00F7665C15B9EB0F00D1364E /* SupportFunctions.cpp */,
 				005D2A3115ADDBD2007D675F /* Types.h */,
 				0023B68315C5BFF000CA4B4E /* Types.cpp */,
-				005D2A2915ACE25D007D675F /* DBN.1 */,
 			);
-			path = DBN;
+			name = Support;
+			sourceTree = "<group>";
+		};
+		00BADC1D160BBD2A00A48208 /* Learners */ = {
+			isa = PBXGroup;
+			children = (
+				00A89FA915D5C15E00159C58 /* Teacher.h */,
+				00A89FA815D5C15E00159C58 /* Teacher.cpp */,
+				0033BD5F15EC21C30047BB2B /* DBN.h */,
+				0033BD5E15EC21C20047BB2B /* DBN.cpp */,
+				00F7665215B86AC400D1364E /* RBM.h */,
+				00F7665315B86AD500D1364E /* RBM.cpp */,
+			);
+			name = Learners;
+			sourceTree = "<group>";
+		};
+		00BADC1E160BBD3C00A48208 /* MLP */ = {
+			isa = PBXGroup;
+			children = (
+				002F161F15EFF9C1001A646B /* MLP.h */,
+				002F161E15EFF9C1001A646B /* MLP.cpp */,
+			);
+			name = MLP;
+			sourceTree = "<group>";
+		};
+		00BADC1F160BBD5600A48208 /* IO */ = {
+			isa = PBXGroup;
+			children = (
+				008E1DA415BDE99300E14290 /* IO.h */,
+				008E1DA515BDEB8000E14290 /* IO.cpp */,
+			);
+			name = IO;
+			sourceTree = "<group>";
+		};
+		00BADC20160BBD6500A48208 /* Monitors/Visualization */ = {
+			isa = PBXGroup;
+			children = (
+				0023B68615C6ECB000CA4B4E /* opengl.h */,
+				008E1DA315BDCD6000E14290 /* Viz.h */,
+				00E9CF9915BF5E8100BFA559 /* Viz.cpp */,
+			);
+			name = Monitors/Visualization;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -215,6 +284,7 @@
 				005DA21F15DD6718001384D0 /* GradientDescent.cpp in Sources */,
 				0084D75315DDB7F60003BA78 /* Timecourses.cpp in Sources */,
 				0033BD6015EC21C30047BB2B /* DBN.cpp in Sources */,
+				002F162015EFF9C1001A646B /* MLP.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

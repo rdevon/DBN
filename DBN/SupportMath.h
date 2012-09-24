@@ -8,7 +8,6 @@
 
 #ifndef DBN_SupportMath_h
 #define DBN_SupportMath_h
-#include "gsl/gsl_vector.h"
 #include <math.h>
 #include "Types.h"
 

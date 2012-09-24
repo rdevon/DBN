@@ -8,36 +8,37 @@
 
 #include <iostream>
 #include "Layers.h"
+#include "IO.h"
 
 GaussianLayer::GaussianLayer(int n) : Layer(n) {
-   biases_ = gsl_vector_float_calloc(nodenum_);
-   vec_update2 = gsl_vector_float_calloc(nodenum_);
-   stat3 = gsl_matrix_float_alloc(nodenum_, batchsize_);
-   stat4 = gsl_matrix_float_alloc(nodenum_, batchsize_);
+   noise = .2;
+   biases = gsl_vector_float_calloc(nodenum);
+   vec_update2 = gsl_vector_float_calloc(nodenum);
+   stat3 = gsl_matrix_float_alloc(nodenum, batchsize);
+   stat4 = gsl_matrix_float_alloc(nodenum, batchsize);
    setsigma = 1;
-   for (int i = 0; i < nodenum_; ++i)
-      gsl_vector_float_set(biases_, i, (float)gsl_ran_gaussian(r, 0.01));
-   quad_coefficients = gsl_vector_float_alloc(nodenum_);
+   for (int i = 0; i < nodenum; ++i)
+      gsl_vector_float_set(biases, i, (float)gsl_ran_gaussian(r, 0.01));
+   quad_coefficients = gsl_vector_float_alloc(nodenum);
    gsl_vector_float_set_all(quad_coefficients, (float)1/sqrtf(2));
-   sigmas = gsl_vector_float_alloc(nodenum_);
+   sigmas = gsl_vector_float_alloc(nodenum);
    gsl_vector_float_set_all(sigmas, 1);
-   sigmas = m_factor_;
+   sigmas = m_factor;
 }
 
-void GaussianLayer::makeBatch(int batchsize){
-   Layer::makeBatch(batchsize);
+void GaussianLayer::makeBatch(int bs){
+   Layer::make_batch(bs);
    gsl_matrix_float_free(stat3);
    gsl_matrix_float_free(stat4);
-   stat3 = gsl_matrix_float_calloc(nodenum_, batchsize_);
-   stat4 = gsl_matrix_float_calloc(nodenum_, batchsize_);
+   stat3 = gsl_matrix_float_calloc(nodenum, batchsize);
+   stat4 = gsl_matrix_float_calloc(nodenum, batchsize);
 }
 
 void GaussianLayer::getExpectations(){
-   if (expectation_up_to_date) return;
-   for (int i = 0; i < nodenum_; ++i){
-      for (int j = 0; j < batchsize_; ++j){
-         float expectation = gsl_matrix_float_get(activations_, i, j);
-         gsl_matrix_float_set(expectations_, i, j, expectation);
+   for (int i = 0; i < nodenum; ++i){
+      for (int j = 0; j < batchsize; ++j){
+         float expectation = gsl_matrix_float_get(activations, i, j);
+         gsl_matrix_float_set(expectations, i, j, expectation);
       }
    }
 }
@@ -50,19 +51,17 @@ void GaussianLayer::getSigmas(){
 }
 
 void GaussianLayer::sample(){
-   if (sample_up_to_date) return;
-   for (int i = 0; i < nodenum_; ++i) {
+   for (int i = 0; i < nodenum; ++i) {
       float sigma = gsl_vector_float_get(sigmas, i);
-      for (int j = 0; j < batchsize_; ++j) {
-         float exp = (sigma*sigma)*gsl_matrix_float_get(expectations_, i, j);
+      for (int j = 0; j < batchsize; ++j) {
+         float exp = (sigma*sigma)*gsl_matrix_float_get(expectations, i, j);
          float sam = (exp + gsl_ran_gaussian(r, sigma));
-         gsl_matrix_float_set(samples_, i, j, sam);
+         gsl_matrix_float_set(samples, i, j, sam);
       }
    }
 }
 
 void GaussianLayer::update(ContrastiveDivergence *teacher){
-   if (learning_up_to_date) return;
    Layer::update(teacher);
    /*if (0){
       float learning_rate = teacher->learningRate_/(float)(teacher->batchsize_*teacher->batchsize_);
@@ -102,7 +101,7 @@ void GaussianLayer::shapeInput(DataSet *data){
    Input_t *input = data->train;
    gsl_vector_float *col = gsl_vector_float_alloc(input->size1);
    if (setsigma > 0) {
-      data->norm_ = gsl_vector_float_alloc(data->train->size2);
+      data->norm = gsl_vector_float_alloc(data->train->size2);
       data->denorm = true;
       for (int j = 0; j < input->size2; ++j) {
          gsl_matrix_float_get_col(col, input, j);
@@ -111,7 +110,7 @@ void GaussianLayer::shapeInput(DataSet *data){
          gsl_vector_float_add_constant(col, -mean);
          gsl_vector_float_scale(col, setsigma/sd);
          gsl_matrix_float_set_col(input, j, col);
-         gsl_vector_float_set(data->norm_, j, sd);
+         gsl_vector_float_set(data->norm, j, sd);
       }
    }
    else {
@@ -125,15 +124,15 @@ void GaussianLayer::shapeInput(DataSet *data){
 }
 
 float GaussianLayer::reconstructionCost(gsl_matrix_float *dataMat, gsl_matrix_float *modelMat){
-   float RC=0;
+   reconstruction_cost=0;
    gsl_matrix_float *squared_error = gsl_matrix_float_alloc(dataMat->size1, dataMat->size2);
    gsl_matrix_float_memcpy(squared_error, dataMat);
    gsl_matrix_float_sub(squared_error, modelMat);
    gsl_matrix_float_mul_elements(squared_error, squared_error);
    for (int i = 0; i < squared_error->size1; ++i)
       for (int j = 0; j < squared_error->size2; ++j)
-         RC+=gsl_matrix_float_get(squared_error, i, j);
-   RC /= squared_error->size2;
+         reconstruction_cost+=gsl_matrix_float_get(squared_error, i, j);
+   reconstruction_cost /= squared_error->size2;
    gsl_matrix_float_free(squared_error);
-   return RC;
+   return reconstruction_cost;
 }

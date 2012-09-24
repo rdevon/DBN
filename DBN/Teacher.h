@@ -9,17 +9,17 @@
 #ifndef __DBN__Teacher__
 #define __DBN__Teacher__
 
-#include <iostream>
-#include "IO.h"
+#include "Types.h"
 
 // This class keeps tracks of statistics and impliments teaching to various components.
 
-class Learner;
-class Visualizer;
 class RBM;
+class Learning_Monitor;
 
 class Teacher{
 public:
+   Learning_Monitor        *monitor;
+   
    ~Teacher(){}
    Teacher(){}
    virtual void teachRBM(RBM* rbm) = 0;
@@ -27,38 +27,44 @@ public:
 
 class ContrastiveDivergence : public Teacher {
 public:
-   float momentum_, sparsitycost_, p_, lambda_;
-   int k_, batchsize_;
-   gsl_vector_float *identity, *forvizvec;
+   float                   momentum;
+   int                     k,
+                           batchsize,
+                           epochs;
+                           
    
-   Visualizer *viz_;
+   gsl_vector_float        *identity;
    
    ~ContrastiveDivergence(){}
    ContrastiveDivergence(){}
-   ContrastiveDivergence(RBM *rbm, float momentum, int k, float p, float lambda, float sparsitycost, int batchsize);
+   ContrastiveDivergence(float momentum, int k, int batchsize, int epochs);
    
    void getStats(RBM*);
    void teachRBM(RBM* rbm);
-   void monitor(RBM*, int i);
 };
 
 class Learner{
 public:
+   Teacher                 *teacher;
+   
    Learner(){}
-   Teacher *teacher;
    virtual void learn() = 0;
 };
 
 class LearningUnit {
 public:
-   float learning_rate_;
-   float decay_;
-   gsl_vector_float *vec_update;
-   gsl_vector_float *vec_update2;
-   gsl_matrix_float *mat_update;
-   virtual void update(ContrastiveDivergence*) = 0;
-   gsl_matrix_float *stat1, *stat2, *stat3, *stat4;
-   LearningUnit(){decay_ = 0;}
+   bool                    learning_up_to_date;
+   float                   learning_rate;
+   float                   decay;
+   gsl_vector_float        *vec_update;
+   gsl_vector_float        *vec_update2;
+   gsl_matrix_float        *mat_update;
+   gsl_matrix_float        *stat1, *stat2, *stat3, *stat4;
+   
+   LearningUnit(){}
+   
+   virtual void update(ContrastiveDivergence*)=0;
+   virtual void catch_stats(Stat_flag_t, Sample_flag_t)=0;
 };
 
 #endif /* defined(__DBN__Teacher__) */
