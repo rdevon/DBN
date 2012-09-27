@@ -12,9 +12,9 @@
 #include "Types.h"
 
 float sigmoid(float x);
-double softplus(double x);
+double softplus(float x);
 float gaussian(float x);
-float csoftmax(double x);
+float softmax(float x, int classes);
 
 float sampleNormalDist(float mu, float sigma);
 #endif

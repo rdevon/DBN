@@ -91,8 +91,9 @@ void RBM::getReconstructionCost(){
       Connection *connection = (Connection*)(*e_iter);
       Layer *from_layer = (Layer*)connection->from;
       reconstruction_cost += from_layer->reconstructionCost(from_layer->extra, from_layer->samples);
+      
+      std::cout << "Reconstruction cost: " << from_layer->reconstruction_cost << std::endl;
    }
-   std::cout << "Reconstruction cost: " << reconstruction_cost << std::endl;
 }
 
 
@@ -129,7 +130,7 @@ int RBM::load_data(Data_flag_t d_flag){
    for (edge_list_iter_t e_iter = edges.begin(); e_iter != edges.end(); ++e_iter) {
       Connection *connection = (Connection*)(*e_iter);
       Layer *from_layer= (Layer*)connection->from;
-      if (!from_layer->load_data(d_flag)) return 0;
+      if (!from_layer->load_data(d_flag, sample_flag)) return 0;
    }
    return 1;
 }

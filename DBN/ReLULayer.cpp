@@ -9,6 +9,7 @@
 #include "Layers.h"
 #include "IO.h"
 
+
 void ReLULayer::getExpectations(){
    //Apply softplus.  Might want to pass a general functor later
    for (int i = 0; i < nodenum; ++i){
@@ -54,15 +55,15 @@ void ReLULayer::shapeInput(DataSet* data){
 }
 
 float ReLULayer::reconstructionCost(gsl_matrix_float *dataMat, gsl_matrix_float *modelMat){
-   float RC=0;
+   reconstruction_cost=0;
    gsl_matrix_float *squared_error = gsl_matrix_float_alloc(dataMat->size1, dataMat->size2);
    gsl_matrix_float_memcpy(squared_error, dataMat);
    gsl_matrix_float_sub(squared_error, modelMat);
    gsl_matrix_float_mul_elements(squared_error, squared_error);
    for (int i = 0; i < squared_error->size1; ++i)
       for (int j = 0; j < squared_error->size2; ++j)
-         RC+=gsl_matrix_float_get(squared_error, i, j);
-   RC /= squared_error->size2;
+         reconstruction_cost+=gsl_matrix_float_get(squared_error, i, j);
+   reconstruction_cost /= squared_error->size2;
    gsl_matrix_float_free(squared_error);
-   return RC;
+   return reconstruction_cost;
 }

@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		000BD30515D1996E004C59BF /* CSoftmaxLayer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 000BD30315D1996E004C59BF /* CSoftmaxLayer.cpp */; };
+		000BD30515D1996E004C59BF /* SoftmaxLayer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 000BD30315D1996E004C59BF /* SoftmaxLayer.cpp */; };
 		0023B68415C5BFF000CA4B4E /* Types.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0023B68315C5BFF000CA4B4E /* Types.cpp */; };
 		0023B68815C6EEAF00CA4B4E /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0023B68715C6EEAF00CA4B4E /* Cocoa.framework */; };
 		0023B68A15C6EEC900CA4B4E /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0023B68915C6EEC900CA4B4E /* OpenGL.framework */; };
@@ -22,6 +22,7 @@
 		00A89FAA15D5C15E00159C58 /* Teacher.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00A89FA815D5C15E00159C58 /* Teacher.cpp */; };
 		00BACCD115D0386B000D52EB /* GaussianLayer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00BACCCF15D0386B000D52EB /* GaussianLayer.cpp */; };
 		00BACCD515D04438000D52EB /* ReLULayer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00BACCD315D04438000D52EB /* ReLULayer.cpp */; };
+		00C60BA61614B4AB00952D10 /* Pathway.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00C60BA41614B4AB00952D10 /* Pathway.cpp */; };
 		00E9CF9A15BF5E8100BFA559 /* Viz.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00E9CF9915BF5E8100BFA559 /* Viz.cpp */; };
 		00F7665115B8680500D1364E /* SupportMath.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00F7665015B8680500D1364E /* SupportMath.cpp */; };
 		00F7665415B86AD500D1364E /* RBM.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00F7665315B86AD500D1364E /* RBM.cpp */; };
@@ -44,7 +45,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		000BD30315D1996E004C59BF /* CSoftmaxLayer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CSoftmaxLayer.cpp; sourceTree = "<group>"; };
+		000BD30315D1996E004C59BF /* SoftmaxLayer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SoftmaxLayer.cpp; sourceTree = "<group>"; };
 		0023B68315C5BFF000CA4B4E /* Types.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Types.cpp; sourceTree = "<group>"; };
 		0023B68615C6ECB000CA4B4E /* opengl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = opengl.h; sourceTree = "<group>"; };
 		0023B68715C6EEAF00CA4B4E /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
@@ -71,6 +72,8 @@
 		00A89FA915D5C15E00159C58 /* Teacher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Teacher.h; sourceTree = "<group>"; };
 		00BACCCF15D0386B000D52EB /* GaussianLayer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GaussianLayer.cpp; sourceTree = "<group>"; };
 		00BACCD315D04438000D52EB /* ReLULayer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ReLULayer.cpp; sourceTree = "<group>"; };
+		00C60BA41614B4AB00952D10 /* Pathway.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Pathway.cpp; sourceTree = "<group>"; };
+		00C60BA51614B4AB00952D10 /* Pathway.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Pathway.h; sourceTree = "<group>"; };
 		00E9CF9915BF5E8100BFA559 /* Viz.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Viz.cpp; sourceTree = "<group>"; };
 		00F7664F15B867F900D1364E /* SupportMath.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SupportMath.h; sourceTree = "<group>"; };
 		00F7665015B8680500D1364E /* SupportMath.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SupportMath.cpp; sourceTree = "<group>"; };
@@ -136,9 +139,9 @@
 				005D2A3015ACE26F007D675F /* Layers.h */,
 				00F8581515B70F1900BBBD53 /* Layers.cpp */,
 				00F8581815B70F2D00BBBD53 /* SigmoidLayer.cpp */,
-				000BD30315D1996E004C59BF /* CSoftmaxLayer.cpp */,
-				00BACCCF15D0386B000D52EB /* GaussianLayer.cpp */,
 				00BACCD315D04438000D52EB /* ReLULayer.cpp */,
+				000BD30315D1996E004C59BF /* SoftmaxLayer.cpp */,
+				00BACCCF15D0386B000D52EB /* GaussianLayer.cpp */,
 			);
 			name = Layers;
 			sourceTree = "<group>";
@@ -181,6 +184,8 @@
 			children = (
 				00A89FA915D5C15E00159C58 /* Teacher.h */,
 				00A89FA815D5C15E00159C58 /* Teacher.cpp */,
+				00C60BA51614B4AB00952D10 /* Pathway.h */,
+				00C60BA41614B4AB00952D10 /* Pathway.cpp */,
 				0033BD5F15EC21C30047BB2B /* DBN.h */,
 				0033BD5E15EC21C20047BB2B /* DBN.cpp */,
 				00F7665215B86AC400D1364E /* RBM.h */,
@@ -278,13 +283,14 @@
 				0023B68415C5BFF000CA4B4E /* Types.cpp in Sources */,
 				00BACCD115D0386B000D52EB /* GaussianLayer.cpp in Sources */,
 				00BACCD515D04438000D52EB /* ReLULayer.cpp in Sources */,
-				000BD30515D1996E004C59BF /* CSoftmaxLayer.cpp in Sources */,
+				000BD30515D1996E004C59BF /* SoftmaxLayer.cpp in Sources */,
 				00A89FAA15D5C15E00159C58 /* Teacher.cpp in Sources */,
 				005DA21B15DC2703001384D0 /* Connections.cpp in Sources */,
 				005DA21F15DD6718001384D0 /* GradientDescent.cpp in Sources */,
 				0084D75315DDB7F60003BA78 /* Timecourses.cpp in Sources */,
 				0033BD6015EC21C30047BB2B /* DBN.cpp in Sources */,
 				002F162015EFF9C1001A646B /* MLP.cpp in Sources */,
+				00C60BA61614B4AB00952D10 /* Pathway.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

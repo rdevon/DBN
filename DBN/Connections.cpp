@@ -37,13 +37,6 @@ void Connection::make_batch(int batchsize){
    to_layer->make_batch(batchsize);
 }
 
-void Connection::init_activation(MLP *mlp){
-   Layer *layer;
-   if (direction_flag == FORWARD) layer = (Layer*)to;
-   else if (direction_flag == BACKWARD) layer = (Layer*)from;
-   layer->init_activation(mlp);
-}
-
 int Connection::transmit_signal(Sample_flag_t s_flag){
    Layer* from_layer = (Layer*)from;
    Layer* to_layer = (Layer*)to;
@@ -77,8 +70,6 @@ int Connection::transmit_signal(Sample_flag_t s_flag){
       case OFF       : return 1;
       default        :
       {
-         if (input_layer->noisy && s_flag == SAMPLE) input_layer->apply_noise();
-         
          gsl_blas_sgemm(transFlag, CblasNoTrans, 1, weights, input_layer->samples, 1, output_layer->activations);
          if (output_layer->visits_waiting == 0) output_layer->finish_activation(s_flag);
          return 1;
@@ -130,10 +121,16 @@ void Connection::init_data(){
    from_layer->input_edge->index = 0;
 }
 
-int Connection::load_data(Data_flag_t data_flag){
+int Connection::load_data(Data_flag_t data_flag, Sample_flag_t s_flag){
    Layer *from_layer = (Layer*)from;
    if (from_layer->status == DONE) return 1;
-   return from_layer->load_data(data_flag);
+   return from_layer->load_data(data_flag, s_flag);
 }
 
 
+void Connection::init_activation(MLP *mlp){
+      Layer *layer;
+      if (direction_flag == FORWARD) layer = (Layer*)to;
+      else if (direction_flag == BACKWARD) layer = (Layer*)from;
+      layer->init_activation(mlp);
+   }

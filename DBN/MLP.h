@@ -63,6 +63,7 @@ public:
    InputEdge                        *input_edge;
    
    int visits_waiting;
+   std::vector<Edge*> find_path(Node* target);
    
    // CONSTRUCTORS -------------------------------------------------------------------------------------
    
@@ -74,12 +75,15 @@ public:
    typedef std::vector<Edge*>        edge_list_t;
    typedef edge_list_t::iterator     edge_list_iter_t;
 
-   edge_list_t                       edges;
-   int test;
-  
-   MLP(){test = 10;}
+   Sample_flag_t                     sample_flag;
    
-   void set_direction_flag_all(Edge_direction_flag_t);
+   edge_list_t                       edges;
+  
+   MLP(){}
+   
+   virtual void set_direction_flag_all(Edge_direction_flag_t);
+   void init_for_transmission();
+   
    void set_status_all_endpoints(Node_status_flag_t);
    void set_status_all(Node_status_flag_t);
    void set_all_outside_off();

@@ -33,7 +33,6 @@ const char* _fragmentSource =
 "\n"
 "uniform sampler2D weight;\n"
 "uniform vec4 color;\n"
-"uniform float scale;\n"
 "out vec4 fragColor;\n"
 "in vec2 tc;\n"
 "#extension GL_ARB_separate_shader_objects : enable\n"
@@ -43,7 +42,7 @@ const char* _fragmentSource =
 "  fragColor = texture(weight, tc);\n"
 "  if (fragColor.r <= -100) fragColor = vec4(1,1,1,1);\n"
 "  else if (fragColor.r <= -99) fragColor = vec4(.5,.5,.5,1);\n"
-"  else fragColor = fragColor.r * scale * color;\n"
+"  else fragColor = fragColor.r * color;\n"
 "}\n";
 
 /**
@@ -311,7 +310,6 @@ void Visualizer::init(int num_tex_maps, int num_line_plots)
    
    // Get the location of the "vertex" attribute in the shader program
    _colorLocation = glGetUniformLocation(_program, "color");
-   _scaleLocation = glGetUniformLocation(_program, "scale");
    _vertexLocation = glGetAttribLocation(_program, "vertex");
    _texCoordLocation = glGetAttribLocation(_program, "texCoord");
    _weightSamplerLoc = glGetUniformLocation(_program, "weight");
@@ -467,12 +465,12 @@ int GLFWCALL close(void)
 int Visualizer::update_tex_unit(Unit_Monitor *gl_unit, int id)
 {
    glBindTexture(GL_TEXTURE_2D, _texID[id]);
-   glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, gl_unit->x_size, gl_unit->y_size, gl_unit->z_size, GL_RED, GL_FLOAT, gl_unit->viz_matrix->data);
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, (int)gl_unit->viz_matrix->size2, (int)gl_unit->viz_matrix->size1, 0, GL_RED, GL_FLOAT, gl_unit->viz_matrix->data);
    //GL_ERR_CHECK();
    
    glm::mat4 mvp;
    
-   mvp = glm::translate(glm::mat4(), glm::vec3(gl_unit->x_position, gl_unit->y_position, gl_unit->z_position)) * glm::scale(glm::mat4(), glm::vec3(gl_unit->scale*gl_unit->x_size, gl_unit->scale*gl_unit->y_size, gl_unit->scale*gl_unit->z_size));
+   mvp = glm::translate(glm::mat4(), glm::vec3(gl_unit->x_position, gl_unit->y_position, gl_unit->z_position)) * glm::scale(glm::mat4(), glm::vec3(.001*gl_unit->x_size, .001*gl_unit->y_size, gl_unit->z_size));
    
    glUseProgram(_program);
    glBindVertexArray(_vao);
@@ -480,8 +478,8 @@ int Visualizer::update_tex_unit(Unit_Monitor *gl_unit, int id)
    glActiveTexture(GL_TEXTURE0);
    glUniformMatrix4fv(_mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
    glUniform4fv(_colorLocation, 1, gl_unit->color);
-   glUniform1f(_scaleLocation, gl_unit->value_scale);
    glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)_points.size());
+   return 1;
 }
 
 int Visualizer::update_line_units(Unit_Monitor *gl_unit, int id){
@@ -491,7 +489,7 @@ int Visualizer::update_line_units(Unit_Monitor *gl_unit, int id){
    
    int x = 0;
    for (auto y:gl_unit->plot_vector){
-      _lineData.push_back(glm::vec4(.1*x,2*y,0,1));
+      _lineData.push_back(glm::vec4(.005*x,2*y,0,1));
       ++x;
    }
    
@@ -503,15 +501,14 @@ int Visualizer::update_line_units(Unit_Monitor *gl_unit, int id){
    // Tell OpenGL where the beginning of the buffer starts for this attribute
    glVertexAttribPointer(_vertexLocation, 4, GL_FLOAT, GL_FLOAT, 0, NULL);
    
-   glm::mat4 mvp = glm::translate(glm::mat4(), glm::vec3(gl_unit->x_position, gl_unit->y_position, gl_unit->z_position)) * glm::scale(glm::mat4(), glm::vec3(.1, 0.1/(gl_unit->plot_vector[0]), .1));
+   glm::mat4 mvp = glm::translate(glm::mat4(), glm::vec3(gl_unit->x_position, gl_unit->y_position, gl_unit->z_position)) * glm::scale(glm::mat4(), glm::vec3(.05, 0.2/(gl_unit->plot_vector[0]), 1));
    glUniformMatrix4fv(_mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
    
    glUniform4fv(_colorLocation, 1, gl_unit->color);
-   glUniform1f(_scaleLocation, gl_unit->value_scale);
    // Enable the generic vertex attribute array
    glEnableVertexAttribArray(_vertexLocation);
    glDrawArrays(GL_LINE_STRIP, 0, GLsizei(_lineData.size()));
-   
+   return 1;
 }
 
 //END OPENGL stuff
@@ -526,6 +523,7 @@ int Visualizer::update(Learning_Monitor *learning_monitor){
       int id = (*gl_iter).first;
       Unit_Monitor *gl_unit = (*gl_iter).second;
       gl_unit->load_viz();
+      gl_unit->scale_matrix_and_threshold();
       update_tex_unit(gl_unit, id);
    }
    
@@ -579,22 +577,86 @@ void Learning_Monitor::update() {
 
 // FOR UNIT MONITORS ------------------------------------------------------------------
 
+void Unit_Monitor::add_viz_vector(){
+   
+   int i = (piece_count/pieces_across)*unit->image_pixels_y;
+   int j = piece_count%pieces_across*unit->image_pixels_x;
+   
+   float max = gsl_stats_float_max(viz_vector->data, 1, viz_vector->size);
+   
+   for (int ii = 0; ii < unit->image_pixels_y; ++ii)
+      for (int jj = 0; jj < unit->image_pixels_x; ++jj)
+      {
+         float val = gsl_vector_float_get(viz_vector, (jj+ii*unit->image_pixels_x));
+         if (val != WHITE && max != 0) val /= max;
+         gsl_matrix_float_set(viz_matrix, i+ii, j+jj, val);
+      }
+   piece_count = (piece_count+1)%(pieces_across*pieces_down);
+}
+
+void Unit_Monitor::clear_viz(){
+   gsl_matrix_float_set_zero(viz_matrix);
+   gsl_vector_float_set_zero(viz_vector);
+   piece_count = 0;
+}
+
+void Unit_Monitor::finish_setup(){
+   viz_vector = gsl_vector_float_alloc((unit->image_pixels_x)*(unit->image_pixels_y));
+   viz_matrix = gsl_matrix_float_calloc(unit->image_pixels_y*pieces_down, unit->image_pixels_x*pieces_across);
+   z_size = 0;
+   color[3] = 1;
+}
+
+void Unit_Monitor::plot(){
+   std::string filepath = plotpath + name + "viz.plot";
+   FILE *file_handle;
+   file_handle = fopen(filepath.c_str(), "w");
+   
+   for (int i = 0; i < viz_matrix->size1; ++i){
+      for (int j = 0; j < viz_matrix->size2; ++j){
+         float val = gsl_matrix_float_get(viz_matrix, i, j);
+         fprintf(file_handle, "%f ", val);
+      }
+      fprintf(file_handle, "\n");
+   }
+   fflush(file_handle);
+   fclose(file_handle);
+}
+
+void Unit_Monitor::load_viz(){}
+
+void Unit_Monitor::scale_matrix_and_threshold(){
+   float max = gsl_stats_float_max(viz_matrix->data, 1, viz_matrix->size1*viz_matrix->size2);
+   
+   for (int i = 0; i < viz_matrix->size1; ++i)
+      for (int j = 0; j < viz_matrix->size2; ++j) {
+         float val = gsl_matrix_float_get(viz_matrix, i, j);
+         
+         if (val == WHITE) {}
+         else if (max != 0 && val/max >= threshold) gsl_matrix_float_set(viz_matrix, i, j, val/max);
+         else gsl_matrix_float_set(viz_matrix, i, j, GREY);
+      }
+}
+
+// ----- Specific unit monitors
+
+
 Connection_Learning_Monitor::Connection_Learning_Monitor(Connection* connection){
    Layer *bot = (Layer*)connection->from;
    Layer *top = (Layer*)connection->to;
-   bot_sample_monitor = new Layer_Sample_Monitor(bot,.005);
-   top_sample_monitor = new Layer_Sample_Monitor(top,.01);
-   con_weight_monitor = new Connection_Weight_Monitor(connection, 20, 5,.002, 1,0);
+   bot_sample_monitor = new Layer_Sample_Monitor(bot,500,250,.5);
+   top_sample_monitor = new Layer_Sample_Monitor(top,300,250,.5);
+   con_weight_monitor = new Connection_Weight_Monitor(connection, 36, 800,400,.5);
    
-   top_bias_monitor   = new Layer_Bias_Monitor(top, .005);
+   top_bias_monitor   = new Layer_Bias_Monitor(top,300);
    
    rec_cost_monitor   = new Reconstruction_Cost_Monitor(bot);
    
-   bot_sample_monitor->set_coords(-.55, -.7, 0);
-   con_weight_monitor->set_coords(-.4, .2, 0);
-   top_sample_monitor->set_coords(-.6, .8, 0);
+   bot_sample_monitor->set_coords(-.55, -.6, 0);
+   con_weight_monitor->set_coords(-.1, .1, 0);
+   top_sample_monitor->set_coords(-.6, .6, 0);
    
-   top_bias_monitor->set_coords(-.3, .8, 0);
+   top_bias_monitor->set_coords(-.6, .8, 0);
    
    rec_cost_monitor->set_coords(-.1, -.8, 0);
    
@@ -606,19 +668,29 @@ Connection_Learning_Monitor::Connection_Learning_Monitor(Connection* connection)
    viz->init(NUM_TEX_MAPS, NUM_LINE_PLOTS);
 }
 
-void Unit_Monitor::load_viz(){}
-
-Layer_Bias_Monitor::Layer_Bias_Monitor (Layer* layer, float sc) : Unit_Monitor(layer->nodenum, (layer->nodenum), sc){
+Layer_Bias_Monitor::Layer_Bias_Monitor (Layer* layer, int x_pixels){
    unit = layer;
-   unit->monitor = this;
    name = "layer biases";
    
-   unit->image_pixels_x= 1;
-   unit->image_pixels_y= 1;
+   threshold = 0;
+   z_size = 0;
+   color[0] = 1, color[1] = 0, color[2] = 1;
+   
+   unit->image_pixels_x = layer->nodenum;
+   unit->image_pixels_y = 1;
+   x_size = x_pixels;
+   y_size = 100;
+   
+   pieces_across = 1;
+   pieces_down = y_size;
    finish_setup();
 }
 
 
+/*Feature_Monitor::Feature_Monitor(Layer* feature_layer, Layer* input_layer, int feature){
+   
+}
+*/
 void Layer_Bias_Monitor::load_viz(){
    clear_viz();
    
@@ -632,7 +704,7 @@ void Layer_Bias_Monitor::load_viz(){
    
    for (int i = 0; i < pieces_down; ++i) {
       float bias_position = (float(i-pieces_down/2)/float(pieces_down/2))*max_abs_bias;
-      for (int j = 0; j < pieces_across; ++j) {
+      for (int j = 0; j < unit->image_pixels_x; ++j) {
          float bias = gsl_vector_float_get(layer->biases, j);
          if (bias >= bias_position && bias_position >=0) gsl_matrix_float_set(viz_matrix, i, j, 1);
          else if (bias <= bias_position && bias_position <= 0) gsl_matrix_float_set(viz_matrix, i, j, 1);
@@ -640,20 +712,26 @@ void Layer_Bias_Monitor::load_viz(){
    }
 }
 
-Layer_Sample_Monitor::Layer_Sample_Monitor (Layer* layer, float sc) : Unit_Monitor(1,1,sc){
+Layer_Sample_Monitor::Layer_Sample_Monitor (Layer* layer, int x_pixels, int y_pixels, float thresh) {
    unit = layer;
-   unit->monitor = this;
    name = "layer samples";
+   threshold = thresh;
+   z_size = 0;
+   color[0] = 1, color[1] = 1, color[2] = 0;
+   pieces_across = pieces_down = 1;
    
    if (layer->input_edge != NULL) {
       unit->image_pixels_x = layer->input_edge->input_x;
       unit->image_pixels_y = layer->input_edge->input_y;
+      y_size = y_pixels;
+      x_size = (y_size*unit->image_pixels_x)/unit->image_pixels_y;
    }
    else {
       unit->image_pixels_x = layer->nodenum;
       unit->image_pixels_y = 1;
+      y_size = 10;
+      x_size = x_pixels;
    }
-   
    finish_setup();
 }
 void Layer_Sample_Monitor::load_viz(){
@@ -673,19 +751,28 @@ void Layer_Sample_Monitor::load_viz(){
    add_viz_vector();
 }
 
-Connection_Weight_Monitor::Connection_Weight_Monitor (Connection* connection, int across, int down, float sc, float v_scale, float thresh)
-: Unit_Monitor(across, down, sc, v_scale, thresh) {
+Connection_Weight_Monitor::Connection_Weight_Monitor (Connection* connection, int sample_num, int x_pixels, int y_pixels, float thresh) :sample_number(sample_num) {
    unit = connection;
-   unit->monitor = this;
    name = "connection weights";
+   threshold = thresh;
+   z_size = 0;
+   color[0] = 0, color[1] = 1, color[2] = 1;
    
    if (connection->from->input_edge != NULL) {
-      unit->image_pixels_x = connection->from->input_edge->input_x, unit->image_pixels_y = connection->from->input_edge->input_y;
+      unit->image_pixels_x = connection->from->input_edge->input_x;
+      unit->image_pixels_y = connection->from->input_edge->input_y;
    }
    else {
       unit->image_pixels_x = ((Layer*)connection->from)->nodenum;
       unit->image_pixels_y = ((Layer*)connection->to)->nodenum;
    }
+   
+   y_size = y_pixels;
+   x_size = x_pixels;
+   
+   pieces_across = 9;
+   pieces_down = 4;
+   
    finish_setup();
 }
 
@@ -693,13 +780,32 @@ void Connection_Weight_Monitor::load_viz(){
    Connection *connection = (Connection*)unit;
    clear_viz();
    
-   for (int i = 0; i < connection->weights->size1; ++i) {
-      gsl_matrix_float_get_row(connection->node_projections, connection->weights, i);
+   gsl_vector_float *sums = gsl_vector_float_alloc(connection->weights->size1);
+   for (int i = 0; i < connection->weights->size1; ++i){
+      float sum = 0;
+      for (int j = 0; j < connection->weights->size2; ++j)
+         sum += pow(gsl_matrix_float_get(connection->weights, i , j),2);
+         //sum += gsl_matrix_float_get(connection->weights, i, j);
+      Layer *top = ((Layer*)connection->to);
+      float bias = gsl_vector_float_get(top->biases, i);
+      gsl_vector_float_set(sums, i, sum*bias);
+   }
+   
+   gsl_permutation *p = gsl_permutation_alloc(connection->weights->size1);
+   gsl_sort_vector_float_index(p, sums);
+   
+   for (int i = 0; i < sample_number; ++i) {
+      //std::cout << connection->weights->size1 - i << " " << i << std::endl;
+      size_t index = p->data[connection->weights->size1 - i - 1];
+      gsl_matrix_float_get_row(connection->node_projections, connection->weights, index);
       if (connection->from->input_edge != NULL) connection->from->input_edge->apply_mask(connection->node_projections, viz_vector);
       add_viz_vector();
    }
+   gsl_vector_float_free(sums);
+   gsl_permutation_free(p);
 }
 
+/*
 Pathway_Monitor::Pathway_Monitor (Pathway* pathway, int across, int down, float sc, float v_scale, float thresh)
 : Unit_Monitor(pieces_across, pieces_down, threshold) {
    unit = pathway;
@@ -741,10 +847,11 @@ void Pathway_Monitor::load_viz(){
    }
    pathway->make_batch(old_batch);
 }
+*/
+
 
 Reconstruction_Cost_Monitor::Reconstruction_Cost_Monitor(Layer *layer){
    unit = layer;
-   unit->monitor = this;
    name = "layer reconstruction cost";
 }
 
@@ -755,54 +862,3 @@ void Reconstruction_Cost_Monitor::load_viz(){
    x_size = y_size = z_size = 1;
 }
 
-void Unit_Monitor::add_viz_vector(){
-   
-   for (int i = 0; i < viz_vector->size; ++i){
-      float value = gsl_vector_float_get(viz_vector, i);
-      if (value < threshold && value != WHITE)
-         gsl_vector_float_set(viz_vector, i, GREY);
-   }
-   
-   int i = (piece_count/pieces_across)*unit->image_pixels_y;
-   int j = piece_count%pieces_across*unit->image_pixels_x;
-   
-   for (int ii = 0; ii < unit->image_pixels_y; ++ii)
-      for (int jj = 0; jj < unit->image_pixels_x; ++jj)
-      {
-         float val;
-         val = gsl_vector_float_get(viz_vector, (jj+ii*unit->image_pixels_x));
-         gsl_matrix_float_set(viz_matrix, i+ii, j+jj, val);
-      }
-   piece_count = (piece_count+1)%(pieces_across*pieces_down);
-}
-
-void Unit_Monitor::clear_viz(){
-   gsl_matrix_float_set_zero(viz_matrix);
-   gsl_vector_float_set_zero(viz_vector);
-   piece_count = 0;
-}
-
-void Unit_Monitor::finish_setup(){
-   viz_vector = gsl_vector_float_alloc((unit->image_pixels_x)*(unit->image_pixels_y));
-   viz_matrix = gsl_matrix_float_calloc(unit->image_pixels_y*pieces_down, unit->image_pixels_x*pieces_across);
-   x_size = (int)viz_matrix->size2;
-   y_size = (int)viz_matrix->size1;
-   z_size = 0;
-   color[0] = 1, color[1] = 0, color[2] = 0, color[3] = 1;
-}
-
-void Unit_Monitor::plot(){
-   std::string filepath = plotpath + name + "viz.plot";
-   FILE *file_handle;
-   file_handle = fopen(filepath.c_str(), "w");
-   
-   for (int i = 0; i < viz_matrix->size1; ++i){
-      for (int j = 0; j < viz_matrix->size2; ++j){
-         float val = gsl_matrix_float_get(viz_matrix, i, j);
-         fprintf(file_handle, "%f ", val);
-      }
-      fprintf(file_handle, "\n");
-   }
-   fflush(file_handle);
-   fclose(file_handle);
-}

@@ -37,4 +37,3 @@ void print_gsl(gsl_matrix_float *m){
       std::cout << std::endl;
    }
 }
-

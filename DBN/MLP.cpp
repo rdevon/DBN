@@ -27,7 +27,20 @@ void MLP::set_status_all(Node_status_flag_t stat) {
       (*e_iter)->from->status = stat;
    }
 }
-
+/*
+void MLP::init_for_transmission(){
+   for (auto edge:edges) {
+      
+      gsl_matrix_float_set_all(activations, 0);
+      visits_waiting = 0;
+      for (edge_list_iter_t e_iter = forward_edges.begin(); e_iter != forward_edges.end(); ++e_iter)
+         if ((*e_iter)->direction_flag == BACKWARD && std::find(mlp->edges.begin(), mlp->edges.end(), *e_iter) != mlp->edges.end()) visits_waiting+=1;
+      for (edge_list_iter_t e_iter = backward_edges.begin(); e_iter != backward_edges.end(); ++e_iter)
+         if ((*e_iter)->direction_flag == FORWARD && std::find(mlp->edges.begin(), mlp->edges.end(), *e_iter) != mlp->edges.end()) visits_waiting+=1;
+      status = WAITING;
+   }
+}
+*/
 InputEdge::InputEdge(DataSet *data) : train(data->train), test(data->test), input_x(data->width), input_y(data->height), name(data->name), mask(data->mask){std::cout << "Forming input edge" << std::endl;}
 
 void InputEdge::apply_mask(gsl_vector_float *sample, gsl_vector_float *sample_with_mask){
@@ -80,3 +93,39 @@ std::vector<Edge*> Edge::probe_network_structure(MLP *mlp, std::vector<Edge*> pa
    to->status = DONE;
    return pathway;
 }
+
+std::vector<Edge*> Node::find_path(Node *target){
+   edge_list_t path;
+   for (auto edge:forward_edges) {
+      Node *node = edge->to;
+      if (node == target){
+         path.push_back(edge);
+         return path;
+      }
+      else {
+         edge_list_t new_path = node->find_path(target);
+         if (new_path.size() != 0) {
+            new_path.push_back(edge);
+            return new_path;
+         }
+      }
+   }
+   
+   for (auto edge:backward_edges) {
+      Node *node = edge->from;
+      if (node == target){
+         path.push_back(edge);
+         return path;
+      }
+      else {
+         edge_list_t new_path = node->find_path(target);
+         if (new_path.size() != 0) {
+            new_path.push_back(edge);
+            return new_path;
+         }
+      }
+   }
+   
+   return path;
+}
+

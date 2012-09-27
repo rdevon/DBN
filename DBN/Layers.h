@@ -57,7 +57,7 @@ public:
    // Unit Functions------------
    void init_activation(MLP *mlp);
    void finish_activation(Sample_flag_t);
-   int load_data(Data_flag_t d_flag);
+   int load_data(Data_flag_t d_flag, Sample_flag_t s_flag);
    
    void apply_noise();
    virtual void sample() = 0;         // Begin sampling.  If sample flag is on, calculate the samples, set samples to the expectation.
@@ -87,7 +87,7 @@ class SigmoidLayer : public Layer {
 public:
    
    SigmoidLayer(int n) : Layer(n){
-      noise = .5;
+      noise = 0.5;
       biases = gsl_vector_float_alloc(nodenum);
       gsl_vector_float_set_all(biases, 0); // This is to force sparsity in simple cases.  Set to some negative number.  Good for analysis
    }
@@ -110,6 +110,7 @@ public:
 class ReLULayer : public Layer {
 public:
    ReLULayer(int n) : Layer(n){
+      noise = 0.5;
       biases = gsl_vector_float_calloc(nodenum);
    }
    
@@ -122,27 +123,6 @@ public:
    float freeEnergy_contibution();
    
    void update(ContrastiveDivergence*);
-};
-
-/////////////////////////////////////
-// Continuous Softmax layer class
-/////////////////////////////////////
-
-class CSoftmaxLayer : public Layer {
-public:
-   CSoftmaxLayer(int n) : Layer(n){
-      biases = gsl_vector_float_calloc(nodenum); //Maybe .5?
-   }
-   
-   void sample();
-   void getExpectations();
-   void shapeInput(DataSet *data);
-   
-   float reconstructionCost(gsl_matrix_float *dataMat, gsl_matrix_float *modelMat){return 0;}
-   void getEnergy(){}
-   float freeEnergy_contibution();
-   
-   void update(ContrastiveDivergence*){}
 };
 
 /////////////////////////////////////
@@ -172,5 +152,30 @@ public:
    
    void update(ContrastiveDivergence*);
 };
+
+/////////////////////////////////////
+// Softmax layer class
+/////////////////////////////////////
+
+class SoftmaxLayer : public Layer {
+public:
+   
+   SoftmaxLayer(int n) : Layer(n) {
+      noise = 0.5;
+      biases = gsl_vector_float_calloc(nodenum); //Maybe .5?
+   }
+   
+   void sample();
+   void getExpectations();
+   void shapeInput(DataSet *data);
+   
+   float reconstructionCost(gsl_matrix_float *dataMat, gsl_matrix_float *modelMat);
+   void getEnergy(){}
+   float freeEnergy_contibution();
+   
+   void update(ContrastiveDivergence*);
+};
+
+
 
 #endif

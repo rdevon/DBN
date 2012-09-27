@@ -53,26 +53,16 @@ void Layer::expandBiases(){
    for (int j = 0; j < batchsize; ++j) gsl_matrix_float_set_col(batchbiases, j, biases);
 }
 
+
 void Layer::apply_noise(){
    {
       for (int i = 0; i < nodenum; ++i)
          for (int j = 0; j < batchsize; ++j) {
             float u = gsl_rng_uniform(r);
             float val = gsl_matrix_float_get(samples, i, j);
-            gsl_matrix_float_set(samples, i, j, val * (u < noise));
+            gsl_matrix_float_set(samples, i, j, val * (u >= noise));
          }
    }
-}
-
-void Layer::init_activation(MLP *mlp){
-   gsl_matrix_float_set_all(activations, 0);
-   visits_waiting = 0;
-   for (edge_list_iter_t e_iter = forward_edges.begin(); e_iter != forward_edges.end(); ++e_iter)
-      if ((*e_iter)->direction_flag == BACKWARD && std::find(mlp->edges.begin(), mlp->edges.end(), *e_iter) != mlp->edges.end()) visits_waiting+=1;
-   for (edge_list_iter_t e_iter = backward_edges.begin(); e_iter != backward_edges.end(); ++e_iter)
-      if ((*e_iter)->direction_flag == FORWARD && std::find(mlp->edges.begin(), mlp->edges.end(), *e_iter) != mlp->edges.end()) visits_waiting+=1;
-   
-   status = WAITING;
 }
 
 void Layer::finish_activation(Sample_flag_t s_flag){
@@ -81,10 +71,12 @@ void Layer::finish_activation(Sample_flag_t s_flag){
    getExpectations();
    if (s_flag == SAMPLE) sample();
    else gsl_matrix_float_memcpy(samples, expectations);
+   
+   if (noisy && s_flag == SAMPLE) apply_noise();
    status = DONE;
 }
 
-int Layer::load_data(Data_flag_t d_flag){
+int Layer::load_data(Data_flag_t d_flag, Sample_flag_t s_flag){
    Input_t *input;
    
    if (d_flag == TRAIN)       input = input_edge->train;
@@ -94,6 +86,8 @@ int Layer::load_data(Data_flag_t d_flag){
    
    gsl_matrix_float_view databatch = gsl_matrix_float_submatrix(input, input_edge->index, 0, batchsize, nodenum);
    gsl_matrix_float_transpose_memcpy(samples, &(databatch.matrix));
+   
+   if (noisy && s_flag == SAMPLE) apply_noise();
    
    input_edge->index += batchsize;
    status = DONE;
@@ -120,3 +114,14 @@ void Layer::catch_stats(Stat_flag_t stat, Sample_flag_t sample){
    if (stat == POS) gsl_matrix_float_memcpy(stat1, s);
    else gsl_matrix_float_memcpy(stat2, s);
 }
+
+void Layer::init_activation(MLP *mlp){
+      gsl_matrix_float_set_all(activations, 0);
+      visits_waiting = 0;
+      for (edge_list_iter_t e_iter = forward_edges.begin(); e_iter != forward_edges.end(); ++e_iter)
+            if ((*e_iter)->direction_flag == BACKWARD && std::find(mlp->edges.begin(), mlp->edges.end(), *e_iter) != mlp->edges.end()) visits_waiting+=1;
+      for (edge_list_iter_t e_iter = backward_edges.begin(); e_iter != backward_edges.end(); ++e_iter)
+            if ((*e_iter)->direction_flag == FORWARD && std::find(mlp->edges.begin(), mlp->edges.end(), *e_iter) != mlp->edges.end()) visits_waiting+=1;
+   
+      status = WAITING;
+   }

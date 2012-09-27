@@ -16,8 +16,6 @@ class Connection;
 class RBM : public Learner, public MLP {
 public:
    
-   Sample_flag_t                       sample_flag;
-   
    float                               free_energy;
    float                               reconstruction_cost;
    

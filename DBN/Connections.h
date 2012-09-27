@@ -41,7 +41,7 @@ public:
    void update(ContrastiveDivergence*);
    
    void init_data();
-   int load_data(Data_flag_t);
+   int load_data(Data_flag_t, Sample_flag_t s_flag);
    
    void getFreeEnergy();
 };

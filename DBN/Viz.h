@@ -122,14 +122,13 @@ public:
 
 class Monitor_Unit {
 public:
-   Unit_Monitor            *monitor;
    
    int                     image_pixels_x,
                            image_pixels_y;
    
    float                   value;
    
-   Monitor_Unit(){monitor = NULL;}
+   Monitor_Unit(){}
 };
 
 class Unit_Monitor {
@@ -147,8 +146,7 @@ public:
    
    float                   color[4];
    
-   float                   scale,
-                           value_scale;
+   float                   threshold;
    
    Monitor_Unit            *unit;
    
@@ -156,17 +154,11 @@ public:
    gsl_matrix_float        *viz_matrix;
    std::vector<float>      plot_vector;
    
-   
    int                     pieces_across,
                            pieces_down,
                            piece_count;
    
-   float                   threshold;
-   
    Unit_Monitor(){}
-   Unit_Monitor(int pieces_across, int pieces_down, float sc = 1, float v_scale = 1, float thresh = 1)
-   : pieces_across(pieces_across), pieces_down(pieces_down), piece_count(0), threshold(threshold), scale(sc), value_scale(v_scale)
-   {unit = NULL;}
    
    void add_viz_vector();
    void clear_viz();
@@ -174,31 +166,33 @@ public:
    void finish_setup();
    void plot();
    void set_coords(float x, float y, float z){x_position = x, y_position = y, z_position = z;}
+   void scale_matrix_and_threshold();
 };
 
 class Layer_Bias_Monitor : public Unit_Monitor {
 public:
-   Layer_Bias_Monitor(Layer* layer, float scale = 1);
+   Layer_Bias_Monitor(Layer* layer, int x_pixels = 200);
    void load_viz();
 };
 
 class Layer_Sample_Monitor : public Unit_Monitor {
 public:
-   Layer_Sample_Monitor(Layer* layer, float scale = 1);
+   Layer_Sample_Monitor(Layer* layer, int x_pixels = 200, int y_pixels = 100, float thresh = .1);
    void load_viz();
 };
 
 class Connection_Weight_Monitor : public Unit_Monitor {
 public:
-   Connection_Weight_Monitor(Connection* connection, int pieces_across, int pieces_down, float scale = 1, float value_scale = 1, float threshold = 1);
+   int sample_number;
+   Connection_Weight_Monitor(Connection* connection, int sample_num, int x_pixels = 500, int y_pixels = 200, float thresh = .1);
    void load_viz();
 };
-
+/*
 class Pathway_Monitor : public Unit_Monitor {
 public:
    Pathway_Monitor(Pathway* pathway, int pieces_across, int pieces_down, float scale = 1, float value_scale = 1, float threshold = 1);
    void load_viz();
-};
+};*/
 
 class Reconstruction_Cost_Monitor : public Unit_Monitor {
 public:

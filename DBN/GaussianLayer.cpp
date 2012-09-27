@@ -11,7 +11,7 @@
 #include "IO.h"
 
 GaussianLayer::GaussianLayer(int n) : Layer(n) {
-   noise = .2;
+   noise = 0.1;
    biases = gsl_vector_float_calloc(nodenum);
    vec_update2 = gsl_vector_float_calloc(nodenum);
    stat3 = gsl_matrix_float_alloc(nodenum, batchsize);
