@@ -37,3 +37,27 @@ void print_gsl(gsl_matrix_float *m){
       std::cout << std::endl;
    }
 }
+
+std::string readTextFile(const std::string& filename)
+{
+   std::ifstream infile(filename.c_str()); // File stream
+   std::string source;                     // Text file string
+   std::string line;                       // A line in the file
+   
+   // Make sure the file could be opened
+   if(!infile.is_open())
+   {
+      std::cerr << "Could not open file: " << filename << std::endl;
+   }
+   
+   // Read in the source one line at a time, then append it
+   // to the source string. Not efficient.
+   while(infile.good())
+   {
+      getline(infile, line);
+      source = source + line + "\n";
+   }
+   
+   infile.close();
+   return source;
+}

@@ -14,4 +14,5 @@ gsl_vector_int *makeShuffleList(int length);
 void print_gsl(gsl_vector_float *v);
 void print_gsl(gsl_vector_int *v);
 void print_gsl(gsl_matrix_float *m);
+std::string readTextFile(const std::string& filename);
 #endif

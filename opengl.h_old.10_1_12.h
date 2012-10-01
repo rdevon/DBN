@@ -1,23 +1,8 @@
 #pragma once
 
-#ifndef __APPLE__
-// Non-Apple platforms need the GL Extension Wrangler
-  #include <GL/glew.h>
-  #  if !defined(_WIN32) && !defined(_WIN64)
-  //  Assuming Unix, which needs glext.h
-  #  include <GL/glext.h>
-  #  endif
-#endif
-
 #if defined(__APPLE_CC__)
   #ifdef OPENGL3
     #include <OpenGL/gl3.h>
-    // Make sure GLFW knows to include gl3.h header under OS X. This
-    // requires the GL/glfw.h be patched, otherwise it will include gl.h
-    // and the output from this program will be a black screen. For this
-    // to work, glfw.h must be patched. See README.txt for details.
-    #undef GLFW_GL3
-    #define GLFW_GL3
   #else
     #include <OpenGL/gl.h>
     // Apple madness that needs some fixing for cross platform compatibility
@@ -25,7 +10,7 @@
     #define glBindVertexArray(_id) glBindVertexArrayAPPLE(_id)
   #endif
 #else
-   #include <GL/gl.h>
+  #include <GL/gl.h>
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -34,6 +19,21 @@
   //   std::cerr << "blah blah" << std::endl;
   // For this reason, the string header must be included.
   #include <string>
+#endif
+
+#ifndef __APPLE__
+// Non-Apple platforms need the GL Extension Wrangler
+  #include <GL/glew.h>
+  #  if !defined(_WIN32) && !defined(_WIN64)
+  //  Assuming Unix, which needs glext.h
+  #  include <GL/glext.h>
+  #  endif
+#else
+  // Make sure GLFW knows to include gl3.h header under OS X. This
+  // requires the GL/glfw.h be patched, otherwise it will include gl.h
+  // and the output from this program will be a black screen. For this
+  // to work, glfw.h must be patched. See README.txt for details.
+  #define GLFW_GL3
 #endif
 
 #ifdef __GNUC__

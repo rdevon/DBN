@@ -53,6 +53,7 @@ public:
    GLuint _texWeightId;         //< Texture object for the weights
    GLuint _negtexWeightId;
    GLuint _plotId;
+   bool   _linearFilter;        //< TODO
    GLint  _weightSamplerLoc;    //< Location of the weight texture sampler in the fragment program
    std::vector<glm::vec4> _points;   //< List of points for the textured quad
    std::vector<glm::vec2> _texCoords;//< Texture coordinates for the textured quad

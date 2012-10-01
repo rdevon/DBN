@@ -42,7 +42,7 @@ int main (int argc, const char * argv[])
    baselayer.shapeInput(&data1);
    //SigmoidLayer stimuluslayer((int)data2.train->size2);
    //stimuluslayer.noise = .2;
-   ReLULayer hiddenlayer(36);
+   ReLULayer hiddenlayer(16);
    //ReLULayer hiddenlayer2(16);
    
    InputEdge ie1(&data1);

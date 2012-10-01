@@ -34,6 +34,8 @@ extern std::string MNISTpath;
 extern std::string plotpath;
 extern std::string fMRIpath;
 extern std::string SPMpath;
+extern std::string vertexPath;
+extern std::string fragmentPath;
 extern gsl_rng * r;
 
 typedef gsl_matrix_float   Input_t;

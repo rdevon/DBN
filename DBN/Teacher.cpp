@@ -58,13 +58,13 @@ void ContrastiveDivergence::teachRBM(RBM *rbm){
          
          if (batchnumber%100 == 0 && monitor != NULL) {
             std::cout << "Batch number: " << batchnumber << std::endl;
-            monitor->update();
+            //monitor->update();
          }
          batchnumber+=1;
       }
       
       rbm->getReconstructionCost();
-      //monitor->update();
+      monitor->update();
    }
    
 }

@@ -11,39 +11,14 @@
 #include "Connections.h"
 #include "DBN.h"
 
+#define STRINGIFY_HELPER(str) #str
+#define STRINGIFY(str) STRINGIFY_HELPER(str)
+
 //BEGIN OPENGL stuff
 
 bool   _running;             //< true if the program is running, false if it is time to terminate
-const char* _vertexSource =
-"#version 150\n"
-"\n"
-"in vec4 vertex;\n"
-"in vec2 texCoord;\n"
-"uniform mat4 mvp;\n"
-"out vec2 tc;\n"
-"\n"
-"void main(void)\n"
-"{\n"
-"	gl_Position = mvp * vertex;\n"
-"  tc = texCoord;\n"
-"}\n";
 
-const char* _fragmentSource =
-"#version 150\n"
-"\n"
-"uniform sampler2D weight;\n"
-"uniform vec4 color;\n"
-"out vec4 fragColor;\n"
-"in vec2 tc;\n"
-"#extension GL_ARB_separate_shader_objects : enable\n"
-"\n"
-"void main(void)\n"
-"{\n"
-"  fragColor = texture(weight, tc);\n"
-"  if (fragColor.r <= -100) fragColor = vec4(1,1,1,1);\n"
-"  else if (fragColor.r <= -99) fragColor = vec4(.5,.5,.5,1);\n"
-"  else fragColor = fragColor.r * color;\n"
-"}\n";
+//--------------------------------------------------------------
 
 /**
  * Clean up and exit
@@ -223,8 +198,8 @@ GLuint Visualizer::createShader(const std::string& source, GLenum shaderType)
  */
 GLuint Visualizer::createGLSLProgram()
 {
-   std::string vertexSource(_vertexSource);
-   std::string fragmentSource(_fragmentSource);
+   std::string vertexSource = readTextFile(vertexPath);
+   std::string fragmentSource = readTextFile(fragmentPath);
    
    _program = glCreateProgram();
    
@@ -646,7 +621,7 @@ Connection_Learning_Monitor::Connection_Learning_Monitor(Connection* connection)
    Layer *top = (Layer*)connection->to;
    bot_sample_monitor = new Layer_Sample_Monitor(bot,500,250,.5);
    top_sample_monitor = new Layer_Sample_Monitor(top,300,250,.5);
-   con_weight_monitor = new Connection_Weight_Monitor(connection, 36, 800,400,.5);
+   con_weight_monitor = new Connection_Weight_Monitor(connection, 16, 800,400,.5);
    
    top_bias_monitor   = new Layer_Bias_Monitor(top,300);
    
@@ -717,7 +692,7 @@ Layer_Sample_Monitor::Layer_Sample_Monitor (Layer* layer, int x_pixels, int y_pi
    name = "layer samples";
    threshold = thresh;
    z_size = 0;
-   color[0] = 1, color[1] = 1, color[2] = 0;
+   color[0] = 0, color[1] = 0, color[2] = 1;
    pieces_across = pieces_down = 1;
    
    if (layer->input_edge != NULL) {
@@ -756,7 +731,7 @@ Connection_Weight_Monitor::Connection_Weight_Monitor (Connection* connection, in
    name = "connection weights";
    threshold = thresh;
    z_size = 0;
-   color[0] = 0, color[1] = 1, color[2] = 1;
+   color[0] = 1, color[1] = 0, color[2] = 0;
    
    if (connection->from->input_edge != NULL) {
       unit->image_pixels_x = connection->from->input_edge->input_x;
@@ -770,8 +745,8 @@ Connection_Weight_Monitor::Connection_Weight_Monitor (Connection* connection, in
    y_size = y_pixels;
    x_size = x_pixels;
    
-   pieces_across = 9;
-   pieces_down = 4;
+   pieces_across = 8;
+   pieces_down = 2;
    
    finish_setup();
 }
@@ -796,7 +771,8 @@ void Connection_Weight_Monitor::load_viz(){
    
    for (int i = 0; i < sample_number; ++i) {
       //std::cout << connection->weights->size1 - i << " " << i << std::endl;
-      size_t index = p->data[connection->weights->size1 - i - 1];
+      //size_t index = p->data[connection->weights->size1 - i - 1];
+      int index = i;
       gsl_matrix_float_get_row(connection->node_projections, connection->weights, index);
       if (connection->from->input_edge != NULL) connection->from->input_edge->apply_mask(connection->node_projections, viz_vector);
       add_viz_vector();
