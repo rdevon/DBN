@@ -58,7 +58,6 @@ set(SOURCE_FILES
    GradientDescent.cpp
    IO.cpp
    Layers.cpp
-   Connections.cpp
    main.cpp
    MLP.cpp
    Pathway.cpp
@@ -80,7 +79,6 @@ set(HEADER_FILES
    GradientDescent.h
    IO.h
    Layers.h
-   Connections.h
    MLP.h
    opengl.h
    Pathway.h
