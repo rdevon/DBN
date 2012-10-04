@@ -9,6 +9,7 @@
 #ifndef DBN_Types_h
 #define DBN_Types_h
 
+#include <stdlib.h>
 #include "gsl/gsl_matrix.h"
 #include "gsl/gsl_rng.h"
 #include "gsl/gsl_vector.h"

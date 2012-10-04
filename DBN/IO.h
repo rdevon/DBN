@@ -9,6 +9,8 @@
 #ifndef DBN_IO_h
 #define DBN_IO_h
 #include "Types.h"
+#include <stdint.h>
+#include <arpa/inet.h>
 
 class Layer;
 
