@@ -11,7 +11,7 @@
 gsl_rng * r;
 std::string MNISTpath = "/Users/devon/Research/DBN/MNISTdata/";
 std::string plotpath = "/Users/devon/Research/DBN/plots/";
-std::string fMRIpath = "/Users/devon/Research/DBN/fMRIdata/";
+std::string fMRIpath = "/Users/devon/Research/DBN/fMRIdata";
 std::string SPMpath = "/Users/devon/Research/DBN/SPMdata/";
 std::string vertexPath = "/Users/devon/Research/DBN/Shaders/Vertex.c";
 std::string fragmentPath = "/Users/devon/Research/DBN/Shaders/Fragment.c";

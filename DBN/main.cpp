@@ -30,29 +30,32 @@ int main (int argc, const char * argv[])
    //LOAD DATASET and INIT
    
    DataSet data1;
-   data1.loadfMRI();
-   DataSet data2;
-   data2.loadstim();
+   
+   data1.loadfMRI(true,true,true);
+   
+   //DataSet data2;
+   //data2.loadstim();
+  
    //---------DONE INIT
    //--------- GSL TESTS GO HERE ----------------
    
    //INIT RBM
    
    GaussianLayer baselayer((int)data1.train->size2);
-   baselayer.shapeInput(&data1);
+   
    //SigmoidLayer stimuluslayer((int)data2.train->size2);
    //stimuluslayer.noise = .2;
-   ReLULayer hiddenlayer(16);
+   ReLULayer hiddenlayer(32);
    //ReLULayer hiddenlayer2(16);
    
    InputEdge ie1(&data1);
-   InputEdge ie2(&data2);
+   //InputEdge ie2(&data2);
    
    baselayer.input_edge = &ie1;
    //stimuluslayer.input_edge = &ie2;
    
    Connection c1(&baselayer, &hiddenlayer);
-   c1.learning_rate = 0.000001;
+   c1.learning_rate = 0.0000001;
    c1.decay = 0.0000002;
    //Connection c2(&stimuluslayer, &hiddenlayer);
    //c2.learning_rate = 0.000000005;
@@ -63,7 +66,7 @@ int main (int argc, const char * argv[])
    //c3.decay = 0.000001;
    
    //--------------
-   float momentum = 0.7;
+   float momentum = 0.65;
    float k = 1;
    float batchsize = 1;
    float epochs = 4000;
@@ -78,9 +81,7 @@ int main (int argc, const char * argv[])
    //rbm.add_connection(&c2);
    rbm.teacher = &cdLearner;
    rbm.learn();
-   
-   
-   while(1);
+
    /*
    DBN dbn;
    dbn.add_connection(&c1);

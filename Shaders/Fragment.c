@@ -19,6 +19,8 @@ void main(void)
   fragColor = texture(weight, tc);
   if (fragColor.r <= -100) fragColor = vec4(1,1,1,1);
   else if (fragColor.r <= -99) fragColor = vec4(.5,.5,.5,1);
+   else if (fragColor.r <= -98) fragColor = vec4(0,0,0,1);
+   else if (fragColor.r <= -97) fragColor = vec4(0,1,1,1);
   else {
      if(fragColor.r < 0.5)
      {

@@ -10,11 +10,15 @@
 #define DBN_IO_h
 #include "Types.h"
 
+class Layer;
+
 class DataSet{
 public:
    std::string name;
    int height, width, number, masksize;
    Input_t *train, *test, *validation, *extra;
+   
+   Layer *input_layer;
    
    bool applymask;
    bool denorm;
@@ -30,13 +34,14 @@ public:
    }
    
    void loadMNIST();
-   void loadfMRI();
+   void loadfMRI(bool,bool,bool);
    void loadSPM();
    void loadstim();
    void splitValidate(float percentage = .1);
    void removeMeanImage();
    void getMask();
    void removeMask();
+   void normalize();
    gsl_vector_float *applyMask(gsl_vector_float *v);
 };
 

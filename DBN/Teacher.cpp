@@ -48,6 +48,8 @@ void ContrastiveDivergence::teachRBM(RBM *rbm){
       int batchnumber = 1;
       
       while (rbm->load_data(TRAIN)){
+         
+         //monitor->update();
          // Gets statistics by performing CD.
          getStats(rbm);
          
@@ -62,9 +64,9 @@ void ContrastiveDivergence::teachRBM(RBM *rbm){
          }
          batchnumber+=1;
       }
-      
       rbm->getReconstructionCost();
       monitor->update();
+      
    }
    
 }

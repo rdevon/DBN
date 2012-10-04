@@ -371,9 +371,9 @@ void Visualizer::init(int num_tex_maps, int num_line_plots)
       GL_ERR_CHECK();
       glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
       GL_ERR_CHECK();
-      glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR ); // GL_NEAREST for no interpolation, GL_LINEAR for interpolation
+      glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST ); // GL_NEAREST for no interpolation, GL_LINEAR for interpolation
       GL_ERR_CHECK();
-      glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+      glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
       GL_ERR_CHECK();
       glBindTexture(GL_TEXTURE_2D, 0);
    }
@@ -619,9 +619,9 @@ void Unit_Monitor::scale_matrix_and_threshold(){
 Connection_Learning_Monitor::Connection_Learning_Monitor(Connection* connection){
    Layer *bot = (Layer*)connection->from;
    Layer *top = (Layer*)connection->to;
-   bot_sample_monitor = new Layer_Sample_Monitor(bot,500,250,.5);
-   top_sample_monitor = new Layer_Sample_Monitor(top,300,250,.5);
-   con_weight_monitor = new Connection_Weight_Monitor(connection, 16, 800,400,.5);
+   bot_sample_monitor = new Layer_Sample_Monitor(bot,500,250,.3);
+   top_sample_monitor = new Layer_Sample_Monitor(top,300,250,.3);
+   con_weight_monitor = new Connection_Weight_Monitor(connection, connection->weights->size1, 800,400,.3);
    
    top_bias_monitor   = new Layer_Bias_Monitor(top,300);
    
@@ -681,8 +681,8 @@ void Layer_Bias_Monitor::load_viz(){
       float bias_position = (float(i-pieces_down/2)/float(pieces_down/2))*max_abs_bias;
       for (int j = 0; j < unit->image_pixels_x; ++j) {
          float bias = gsl_vector_float_get(layer->biases, j);
-         if (bias >= bias_position && bias_position >=0) gsl_matrix_float_set(viz_matrix, i, j, 1);
-         else if (bias <= bias_position && bias_position <= 0) gsl_matrix_float_set(viz_matrix, i, j, 1);
+         if (bias >= bias_position && bias_position >=0) gsl_matrix_float_set(viz_matrix, i, j, BLUE);
+         else if (bias <= bias_position && bias_position <= 0) gsl_matrix_float_set(viz_matrix, i, j, BLUE);
       }
    }
 }
@@ -712,7 +712,7 @@ Layer_Sample_Monitor::Layer_Sample_Monitor (Layer* layer, int x_pixels, int y_pi
 void Layer_Sample_Monitor::load_viz(){
    clear_viz();
    Layer *layer = (Layer*)unit;
-   gsl_matrix_float_get_col(layer->sample_vector, layer->expectations, 0);
+   gsl_matrix_float_get_col(layer->sample_vector, layer->samples, 0);
    if (layer->input_edge != NULL) {
       layer->input_edge->apply_mask(layer->sample_vector, viz_vector);
    }
@@ -746,7 +746,7 @@ Connection_Weight_Monitor::Connection_Weight_Monitor (Connection* connection, in
    x_size = x_pixels;
    
    pieces_across = 8;
-   pieces_down = 2;
+   pieces_down = 4;
    
    finish_setup();
 }

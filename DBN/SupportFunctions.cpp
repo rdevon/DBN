@@ -61,3 +61,11 @@ std::string readTextFile(const std::string& filename)
    infile.close();
    return source;
 }
+
+void save_gsl_matrix(gsl_matrix_float *m){
+   std::string path = plotpath + "test.out";
+   FILE *file_handle;
+   file_handle = fopen(path.c_str(), "w");
+   gsl_matrix_float_fprintf(file_handle, m, "%.5g");
+   fclose(file_handle);
+}

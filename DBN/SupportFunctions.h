@@ -15,4 +15,5 @@ void print_gsl(gsl_vector_float *v);
 void print_gsl(gsl_vector_int *v);
 void print_gsl(gsl_matrix_float *m);
 std::string readTextFile(const std::string& filename);
+void save_gsl_matrix(gsl_matrix_float *m);
 #endif
