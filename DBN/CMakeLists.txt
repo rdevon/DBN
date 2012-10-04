@@ -44,6 +44,7 @@ include_directories(
 # Get the path to the source code and create a define. This is used
 # for locating the shaders
 add_definitions("-DSOURCE_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}\"")
+add_definitions("-std=c++0x")
 
 # Platform specific libraries
 if(APPLE)
