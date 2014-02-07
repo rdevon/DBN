@@ -2,49 +2,42 @@
 //  IO.h
 //  DBN
 //
-//  Created by Devon Hjelm on 7/23/12.
-//  Copyright 2012 __MyCompanyName__. All rights reserved.
+//  Created by Devon Hjelm on 11/13/12.
+//
 //
 
-#ifndef DBN_IO_h
-#define DBN_IO_h
-#include "Types.h"
-#include <stdint.h>
-#include <arpa/inet.h>
+#ifndef __DBN__IO__
+#define __DBN__IO__
 
+#include <iostream>
+#include <vector>
+#include <H5Cpp.h>
+
+class MLP;
+class DBN;
+class Level;
 class Layer;
+class Connection;
+class Layer_Monitor;
 
-class DataSet{
-public:
-   std::string name;
-   int height, width, number, masksize;
-   Input_t *train, *test, *validation, *extra;
-   
-   Layer *input_layer;
-   
-   bool applymask;
-   bool denorm;
-   
-   gsl_vector_float *meanImage;
-   gsl_vector_float *mask;
-   gsl_vector_float *norm;
-   
-   DataSet(){
-      masksize = 0;
-      mask = NULL;
-      meanImage = NULL;
-   }
-   
-   void loadMNIST();
-   void loadfMRI(bool,bool,bool);
-   void loadSPM();
-   void loadstim();
-   void splitValidate(float percentage = .1);
-   void removeMeanImage();
-   void getMask();
-   void removeMask();
-   void normalize();
-   gsl_vector_float *applyMask(gsl_vector_float *v);
-};
+void save(const MLP&);
+MLP load_MLP(std::string file_name);
 
-#endif
+void save(const Level&, const std::vector<Layer*>& layers, H5::Group& group);
+Level load_level(H5::Group&, std::vector<Layer*>&);
+
+void save(const std::vector<Connection*>&, const std::vector<Layer*>&, H5::Group&);
+std::vector<Connection*> load_connections(H5::Group&, std::vector<Layer*>&);
+void save(const Connection&, H5::DataSet &ds);
+Connection *load_connection(H5::DataSet&, Layer*, Layer*);
+
+void save(const std::vector<Layer*>&, H5::Group&);
+std::vector<Layer*> load_layers(H5::Group&);
+void save(const Layer&, H5::DataSet &ds);
+Layer *load_layer(H5::DataSet&);
+
+void save_features(Layer_Monitor*, std::string name);
+
+herr_t file_info(hid_t loc_id, const char *name, void *list);
+
+#endif /* defined(__DBN__IO__) */

@@ -9,12 +9,8 @@
 #ifndef DBN_SupportMath_h
 #define DBN_SupportMath_h
 #include <math.h>
-#include "Types.h"
+#include "Params.h"
 
 float sigmoid(float x);
 double softplus(float x);
-float gaussian(float x);
-float softmax(float x, int classes);
-
-float sampleNormalDist(float mu, float sigma);
 #endif

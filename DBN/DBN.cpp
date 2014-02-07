@@ -10,90 +10,76 @@
 #include "Connections.h"
 #include "RBM.h"
 #include "Layers.h"
-#include "Pathway.h"
+#include "DataSets.h"
+#include "Monitors.h"
+#include "IO.h"
+#include "Autoencoder.h"
 
+DBN::DBN(MLP reference_MLP) : MLP(), reference_MLP(reference_MLP) {viz_layer = reference_MLP.viz_layer; data_layers = reference_MLP.data_layers;}
 
-
-void DBN::add_connection(Connection *connection) {
-   edges.push_back(connection);
-}
-
-void DBN::finish_setup(){
-   set_direction_flag_all(FORWARD);
-   set_status_all(WAITING);
-   
-   for (edge_list_iter_t e_iter = edges.begin(); e_iter != edges.end(); ++e_iter){
-      Edge *edge = *e_iter;
-      
-      if (edge->from->input_edge != NULL) {
-         edge->probe_network_structure(this, std::vector<Edge *>());
-      }
-   }
-   set_status_all(WAITING);
-   // Have to do it twice to get the levels right.
-   
-   for (edge_list_iter_t e_iter = edges.begin(); e_iter != edges.end(); ++e_iter){
-      Edge *edge = *e_iter;
-      if (edge->from->input_edge != NULL) {
-         std::vector<Edge *> path = edge->probe_network_structure(this, std::vector<Edge *>());
-         Pathway *pathway = new Pathway;
-         for (edge_list_iter_t e_iter = path.begin(); e_iter != path.end(); ++e_iter){
-            Connection *connection  = (Connection*)(*e_iter);
-            pathway->add_connection(connection);
-         }
-         pathways.push_back(pathway);
-      }
-   }
-   /*for (edge_list_iter_t e_iter = edges.begin(); e_iter != edges.end(); ++e_iter) {
-      Edge *edge = *e_iter;
-      if (edge->level > rbms.size()) {
-         RBM rbm;
-         rbms.push_back(rbm);
-      }
-   }
-   
-   for (edge_list_iter_t e_iter = edges.begin(); e_iter != edges.end(); ++e_iter) {
-      
-      Connection *connection = (Connection*)*e_iter;
-      RBM *rbm = &rbms[connection->level-1];
-      
-      rbm->add_connection(connection);
-      
-   }*/
-}
-
-void DBN::learn(){
-   
-   set_status_all(WAITING);
-   int layer = 1;
+void DBN::learn(ContrastiveDivergence &teacher){
+   std::cout << "Begining DBN Learning" << std::endl;
+   int l = (int)levels.size();
+#ifdef USEGL
+   Visualizer *viz;
+   if (monitor_dbn) viz = new Visualizer(1000,1000);
+#else
+   Visualizer *viz = new Visualizer();
+#endif
+   std::cout << "DBN: " << std::endl << *this;
+   std::cout << "Learning MLP: " << std::endl << reference_MLP;
+   Level level = reference_MLP.levels[l];
+   add(level);
    while (1){
-      set_status_all(DONE);
-      RBM rbm;
-      //rbm.viz = viz;
-      rbm.teacher = teacher;
+      RBM rbm(level);
+      clock_t lStart = clock();
       
-      for (edge_list_iter_t e_iter = edges.begin(); e_iter != edges.end(); ++e_iter){
-         Edge *edge = *e_iter;
-         if (edge->level == layer)
-            rbm.add_connection((Connection*)edge);
+      if (viz_layer) {
+         Monitor *monitor = new Layer_Monitor(this, level.top_layers[0], viz);
+         teacher.monitor = monitor;
+         monitor->teacher = &teacher;
       }
+      else std::cout << "Warning, no visualization layer" << std::endl;
       
-      for (pathway_list_iterator_t p_iter = pathways.begin(); p_iter != pathways.end(); ++p_iter){
-         Pathway *pathway = *p_iter;
-         Connection *connection = pathway->path[layer-1];
-         
-         pathway->last = connection;
-      }
+      rbm.learn(teacher);
+      std::cout << "Done training " << level << " layer." << std::endl << "Layer took " << (double)(clock()-lStart)/CLOCKS_PER_SEC << " seconds to train" << std::endl;
       
-      if (rbm.edges.size() == 0) break;
-      
-      for (int epoch = 1; epoch < 500; ++epoch){
-         std::cout << "Layer " << layer << ", Epoch " << epoch << std::endl;
-         rbm.learn();
-      }
-      rbm.transport_data();
-      
-      std::cout << "Done with " << layer << " layer." << std::endl;
-      ++layer;
+      // Next level
+      ++l;
+      if (l == reference_MLP.levels.size()) break;
+      Level new_level = reference_MLP.levels[l];
+      add(new_level);
+      level.transport_data(new_level);
+      level = new_level;
    }
+   save(*this);
+#if 1
+   Autoencoder ae(*this);
+   ae.name = this->name + ".ft";
+   Gradient_Descent gd(0);
+   gd.teachAE(ae);
+   save(ae);
+#endif
+#ifdef USEGL
+   if (monitor_dbn) viz->close_window();
+#endif
 }
+
+void DBN::view() {
+   Monitor *monitor;
+#ifdef USEGL
+   Visualizer *viz = new Visualizer(1000,1000);
+#else
+   Visualizer *viz = new Visualizer();
+#endif
+   monitor = new Layer_Monitor(this, levels.back().top_layers[0], viz);
+   monitor->view();
+}
+
+void DBN::stack(Level &new_level) {
+   levels.clear();
+   data_layers.clear();
+   for (auto level:reference_MLP.levels) add(level);
+   reference_MLP.add(new_level);
+}
+

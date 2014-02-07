@@ -14,25 +14,18 @@
 #include "MLP.h"
 #include "Viz.h"
 
-class RBM;
-class Connection;
-class Pathway;
-
-class DBN : public Learner, public MLP {
+class DBN : public MLP {
 public:
-   typedef std::vector<Pathway*>                    pathway_list_t;
-   typedef pathway_list_t::iterator                pathway_list_iterator_t;
+   bool monitor_dbn;
+   MLP  reference_MLP;
    
-   pathway_list_t                                  pathways;
+   DBN(MLP reference_MLP);
    
-   DBN(){}
-   DBN(edge_list_t e){
-      edges = e;
-   }
-   
-   void add_connection(Connection* connection);
-   void finish_setup();
-   void learn();
+   void init_learners(){}
+   void learn(ContrastiveDivergence&);
+   void view();
+   void stack(Level &level);
 };
+
 
 #endif /* defined(__DBN__DBN__) */

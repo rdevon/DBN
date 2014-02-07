@@ -13,35 +13,24 @@
 
 class Connection;
 
-class RBM : public Learner, public MLP {
+class RBM : public Level {
 public:
    
-   float                               free_energy;
-   float                               reconstruction_cost;
-   
    ~RBM(){}
-   RBM();
+   RBM(Level);
+
+   void reset();
    
-   void add_connection(Connection* connection);
-   
-   void getFreeEnergy();
-   void prop(Edge_direction_flag_t);
    void gibbs_HV();
    void gibbs_VH();
+
+   void init();
    
-   void getReconstructionCost();
+   void learn(ContrastiveDivergence&);
    
-   void learn();
-   
-   void get_dims(float *topdim, float *botdim);
-   void make_batch(int batch_size);
-   
-   void init_data();
-   int load_data(Data_flag_t d_flag);
-   void transport_data();
-   
-   void update(ContrastiveDivergence*);
+   void update(ContrastiveDivergence&, bool);
    void catch_stats(Stat_flag_t s);
+   float get_reconstruction_cost();
 };
 
 #endif

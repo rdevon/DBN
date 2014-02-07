@@ -9,84 +9,96 @@
 #ifndef __DBN__MLP__
 #define __DBN__MLP__
 
-#include "Types.h"
+#include "Params.h"
 
-class DataSet;
-class Node;
-class MLP;
+class Layer;
+class Connection;
 
-class Edge {
+class Level {
+   void swap(Level &other) {
+      using std::swap;
+      swap(connections, other.connections);
+      swap(top_layers, other.top_layers);
+      swap(bot_layers, other.bot_layers);
+   }
+   bool check_connection (Connection &connection);
+   
 public:
+   std::vector<Connection*> connections;
+   std::vector<Layer*> top_layers, bot_layers;
+   Level(){}
+   Level(const Level &other): connections(other.connections), top_layers(other.top_layers), bot_layers(other.bot_layers){}
+   Level &operator= (Level rhs) {swap(rhs); return *this;}
    
-   Edge_direction_flag_t            direction_flag;
-   
-   Node                             *from, *to;
-   
-   int level;
-   
-   Edge(){}
-   
-   // METHODS ------------------------------------------------------------------------------------
-   std::vector<Edge*> probe_network_structure(MLP*, std::vector<Edge*>);
-   
+   void add(Connection& connection);
+   Transmit_t transmit(Direction_t direction, Purpose_t purpose, Sample_flag_t sample);
+   void init_data();
+   int pull_data(Purpose_t);
+   void transport_data(Level &);
+   void clear();
 };
 
-class InputEdge {
+class MLP {
+   
+   void swap(MLP &other) {
+      using std::swap;
+      swap(levels, other.levels);
+      swap(data_layers, other.data_layers);
+      swap(layers, other.layers);
+      swap(connections, other.connections);
+      viz_layer = other.viz_layer;
+   }
+
 public:
-   Input_t *train;
-   Input_t *test;
-   int input_x, input_y;
-   int index;
-   gsl_vector_float *mask;
    std::string name;
    
-   InputEdge(){};
-   ~InputEdge(){}
+   float reconstruction_cost;
+   Layer                      *viz_layer;
+   std::vector<Layer*>        data_layers;
+   std::vector<Level>         levels;
+   std::map<std::pair<Layer*, Layer*>, Connection*>   graph;
+   std::vector<Layer*>        layers;
+   std::vector<Connection*>   connections;
    
-   InputEdge(DataSet *data);
-   void apply_mask(gsl_vector_float *sample, gsl_vector_float *sample_with_mask);
-};
-
-class Node{
-public:
-   
-   typedef std::vector<Edge*>       edge_list_t;
-   typedef edge_list_t::iterator    edge_list_iter_t;
-   
-   // MEMBERS -------------------------------------------------------------------------------------
-   
-   Node_status_flag_t               status;
-   
-   edge_list_t                      forward_edges;
-   edge_list_t                      backward_edges;
-   
-   InputEdge                        *input_edge;
-   
-   int visits_waiting;
-   std::vector<Edge*> find_path(Node* target);
-   
-   // CONSTRUCTORS -------------------------------------------------------------------------------------
-   
-   Node() : status(DONE) {input_edge = NULL;}
-};
-
-class MLP{
-public:
-   typedef std::vector<Edge*>        edge_list_t;
-   typedef edge_list_t::iterator     edge_list_iter_t;
-
-   Sample_flag_t                     sample_flag;
-   
-   edge_list_t                       edges;
-  
    MLP(){}
+   MLP &operator= (MLP rhs) {swap(rhs);return *this;}
+   MLP(const MLP &other) : levels(other.levels), connections(other.connections), layers(other.layers), viz_layer(other.viz_layer), data_layers(other.data_layers) {}
    
-   virtual void set_direction_flag_all(Edge_direction_flag_t);
-   void init_for_transmission();
+   void add(Level& level);
+   void transmit(Direction_t direction, Purpose_t purpose, Sample_flag_t sample);
+   Transmit_t transmit(Layer*, Layer*);
+   void init_data();
+   int pull_data(Purpose_t purpose);
+   float get_reconstruction_cost();
    
-   void set_status_all_endpoints(Node_status_flag_t);
-   void set_status_all(Node_status_flag_t);
-   void set_all_outside_off();
+   //todo
+#if 0
+   void finish() {
+      layers.clear();
+      connections.clear();
+      graph.clear();
+      for (auto level:levels) {
+         for (auto connection:level.connections) {
+            graph[std::pair<Layer*, Layer*>(connection->from, connection->to)] = connection;
+            if (!x_is_in(connection->from, layers)) layers.push_back(connection->from);
+            if (!x_is_in(connection->to, layers)) layers.push_back(connection->to);
+            if (!x_is_in(connection, connections)) connections.push_back(connection);
+         }
+      }
+   }
+   
+   Connection &attach(Layer* l1, Layer* l2) {
+      std::pair<Layer*, Layer*> ll(l1,l2);
+      if (std::find(graph.begin(), graph.end(), ll) != graph.end()) return *graph[ll];
+      else {
+      }
+   }
+#endif
 };
+
+std::ostream& operator<<(std::ostream& out,MLP& mlp);
+std::ostream& operator<<(std::ostream& out,Level &level);
+std::ostream& operator<<(std::ostream& out,Connection &connection);
+std::ostream& operator<<(std::ostream& out,Layer &layer);
 
 #endif /* defined(__DBN__MLP__) */

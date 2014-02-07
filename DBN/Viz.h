@@ -8,38 +8,69 @@
 
 #ifndef DBN_Viz_h
 #define DBN_Viz_h
-#include "Types.h"
 
+#include <stdlib.h>
+#include "Params.h"
+
+#ifdef USEGL
+
+#if __APPLE__
+#define OPENGL3
+#endif
+#include "opengl.h"
 #define GLFW_GL3
 #include <GL/glfw.h>
-#define OPENGL3
-#include "opengl.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#endif
 
-class Viz_Unit;
-class GL_Unit;
-class Learning_Monitor;
+class Tex_Unit;
+class Plot_Unit;
 class Unit_Monitor;
+class Feature_to_Data_Monitor;
+class Monitor;
+class New_Monitor;
+class MLP;
 class Layer;
-class Connection;
-class Pathway;
-class Connection_Weight_Monitor;
-class Layer_Sample_Monitor;
-class Layer_Bias_Monitor;
+class fMRI_Feature_Monitor;
+class Border;
+class fMRI_Layer_Monitor;
 class Reconstruction_Cost_Monitor;
+class DBN;
+class MNIST_Feature_Monitor;
+class MNIST_Layer_Monitor;
+class Teacher;
+class Visualizer;
+class Viz_Unit;
 
+#ifdef USEGL
+void GLFWCALL resize(int width, int height);
+void GLFWCALL keypress(int key, int state);
+int GLFWCALL close(void);
+extern Visualizer *the_viz;
+#endif
 
+extern Monitor    *the_monitor;
 
 class Visualizer{
 public:
    
-   std::vector<GLuint> _texID;
-   std::vector<GLuint>  _lineVAO;   //< Vertex array object for line plots
-   std::vector<GLuint>  _lineBO;    //< Vertex buffer object for the position of vertices in the line plots
+   bool                    on;
+   bool                    pause;
+   enum tex_control{POSITVE = 0, NEGATIVE, BOTH} tc;
+#ifdef USEGL
+   std::map<Tex_Unit*, GLuint> _texture_maps;
+   std::map<Plot_Unit*, GLuint> _lineVAO_maps;
+   std::map<Plot_Unit*, GLuint> _lineBO_maps;
+   std::map<Viz_Unit*, GLuint> _borderVAO_maps;
+   std::map<Viz_Unit*, GLuint> _borderBO_maps;
+   
+   //std::map<GLuint, Tex_Unit*>  _texID;
+   //std::map<GLuint, Plot_Unit*>  _lineVAO;   //< Vertex array object for line plots
+   //std::map<GLuint, Plot_Unit*>  _lineBO;    //< Vertex buffer object for the position of vertices in the line plots
    
    GLuint _program;             //< Shader program handle
    GLuint _vao;                 //< Vertex array object for the vertices for the textured quad
@@ -53,21 +84,27 @@ public:
    GLuint _texWeightId;         //< Texture object for the weights
    GLuint _negtexWeightId;
    GLuint _plotId;
+   GLuint _colorFilter;
    bool   _linearFilter;        //< TODO
    GLint  _weightSamplerLoc;    //< Location of the weight texture sampler in the fragment program
    std::vector<glm::vec4> _points;   //< List of points for the textured quad
    std::vector<glm::vec2> _texCoords;//< Texture coordinates for the textured quad
-   
+#endif
    Visualizer(){}
+#ifdef USEGL
    Visualizer(int width, int height){
       open_window(width, height);
+      pause = false;
+      tc = POSITVE;
    }
    
    void open_window(int width, int height);
    void close_window();
-   void update();
-   
-   //GL STUFF HERE
+   void add_tex(Tex_Unit*);
+   void add_plot(Plot_Unit*);
+   void delete_tex(Tex_Unit*);
+   void delete_plot(Plot_Unit*);
+   void clear();
    
    void terminate(int exitCode);
    std::string readTextFile(const std::string& filename);
@@ -77,132 +114,17 @@ public:
    std::string getProgramLog(GLuint program);
    GLuint createShader(const std::string& source, GLenum shaderType);
    GLuint createGLSLProgram();
-   void init(int num_tex_maps, int num_line_plots);
-   int update_line_units(Unit_Monitor *gl_unit, int id);
-   int update_tex_unit(Unit_Monitor *gl_unit, int id);
-   int update(Learning_Monitor*);
    
+   void init();
+   
+   int draw_texture_map(Tex_Unit *tex_unit);
+   int draw_plot(Plot_Unit *plot_unit);
+   int draw_border(Viz_Unit *viz_unit);
+   int update(Monitor*);
+   void toggle_on() {on = !on;}
+   void toggle_pause() {pause = !pause;
+      if (pause) std::cout << "<PAUSE>" << std::endl; else std::cout << "<RESUME>" << std::endl; 
+   }
+#endif
 };
-
-class Learning_Monitor {
-public:
-   Visualizer                         *viz;
-   
-   std::map <int, Unit_Monitor*>      tex_units;
-   std::map <int, Unit_Monitor*>      line_units;
-   
-   Learning_Monitor(){viz = new Visualizer(1000,1000);}
-   void update();
-};
-
-class Connection_Learning_Monitor : public Learning_Monitor {
-public:
-   enum TexMaps {
-      BOT_SAMPLES = 0,
-      CONNECTION_WEIGHTS,
-      TOP_SAMPLES,
-      TOP_BIASES,
-      NUM_TEX_MAPS
-   };
-   enum LinePlots {
-      REC_COST_PLOT,
-      NUM_LINE_PLOTS
-   };
-      
-   Layer_Sample_Monitor          *top_sample_monitor;
-   Layer_Sample_Monitor          *bot_sample_monitor;
-   Connection_Weight_Monitor     *con_weight_monitor;
-   
-   Layer_Bias_Monitor            *top_bias_monitor;
-   
-   Reconstruction_Cost_Monitor   *rec_cost_monitor;
-   
-   Connection_Learning_Monitor(Connection* connection);
-   
-};
-
-class Monitor_Unit {
-public:
-   
-   int                     image_pixels_x,
-                           image_pixels_y;
-   
-   float                   value;
-   
-   Monitor_Unit(){}
-};
-
-class Unit_Monitor {
-public:
-   
-   std::string             name;
-   
-   // GL positions
-   float                   x_position,
-                           y_position,
-                           z_position;
-   int                     x_size,
-                           y_size,
-                           z_size;
-   
-   float                   color[4];
-   
-   float                   threshold;
-   
-   Monitor_Unit            *unit;
-   
-   gsl_vector_float        *viz_vector;
-   gsl_matrix_float        *viz_matrix;
-   std::vector<float>      plot_vector;
-   
-   int                     pieces_across,
-                           pieces_down,
-                           piece_count;
-   
-   Unit_Monitor(){}
-   
-   void add_viz_vector();
-   void clear_viz();
-   virtual void load_viz();
-   void finish_setup();
-   void plot();
-   void set_coords(float x, float y, float z){x_position = x, y_position = y, z_position = z;}
-   void scale_matrix_and_threshold();
-};
-
-class Layer_Bias_Monitor : public Unit_Monitor {
-public:
-   Layer_Bias_Monitor(Layer* layer, int x_pixels = 200);
-   void load_viz();
-};
-
-class Layer_Sample_Monitor : public Unit_Monitor {
-public:
-   Layer_Sample_Monitor(Layer* layer, int x_pixels = 200, int y_pixels = 100, float thresh = .1);
-   void load_viz();
-};
-
-class Connection_Weight_Monitor : public Unit_Monitor {
-public:
-   int sample_number;
-   Connection_Weight_Monitor(Connection* connection, int sample_num, int x_pixels = 500, int y_pixels = 200, float thresh = .1);
-   void load_viz();
-};
-/*
-class Pathway_Monitor : public Unit_Monitor {
-public:
-   Pathway_Monitor(Pathway* pathway, int pieces_across, int pieces_down, float scale = 1, float value_scale = 1, float threshold = 1);
-   void load_viz();
-};*/
-
-class Reconstruction_Cost_Monitor : public Unit_Monitor {
-public:
-   Reconstruction_Cost_Monitor(Layer* layer);
-   void load_viz();
-};
-
-void GLFWCALL resize(int width, int height);
-void GLFWCALL keypress(int key, int state);
-int GLFWCALL close(void);
-
 #endif

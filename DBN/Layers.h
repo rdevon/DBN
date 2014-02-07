@@ -10,119 +10,123 @@
 #define DBN_Layers_h
 
 #include "Teacher.h"
-#include "MLP.h"
-#include "Viz.h"
 
-#include "SupportMath.h"
-#include "SupportFunctions.h"
-#include "Types.h"
+#include "Params.h"
+#include "Matrix.h"
 
 /////////////////////////////////////
 // Layer class
 /////////////////////////////////////
 
-class Layer : public LearningUnit, public Node, public Monitor_Unit {
+class DataSet;
+
+class Layer : public LearningUnit {
 public:
    
    // MEMBERS -------------------------------------------------------------------------------------
    
-   int                  nodenum;
-   int                  batchsize;
-   bool                 noisy;
+   Layer_t              type;
+   float                max_input;
+   size_t               nodenum;
    float                noise;
+   bool                 noisy;
+   int                  reset_switch;
+   DataSet              *data;
    
-   //--------All of the activations are done as nxb matrices, where n is the number of nodes and b
-   //--------is the batch size
+   //--------Vectors and matrices
    
-   gsl_matrix_float     *activations;                 // The literal unit activations.
-   gsl_matrix_float     *expectations;                // The statistical mean of the samples.  These are good when doing less noisy analysis (see activation flags)
-   gsl_matrix_float     *samples;                     // These are for the binary units specifically, but might be needed for others.  The sigmoid function is
-   gsl_vector_float     *m_factor;                    // A multiplicative factor for signals (this is for gaussian layers especially)
+   Vector               v_generating;                 // Vector for generation
+   Matrix               m_learning;                   // Matrix for learning (generally batch)
+   Matrix               m_testing;                    // Matrix for error testing (batch)
+   Matrix               m_dropout;                    // Matrix for implimenting dropout;
    
-   gsl_vector_float     *biases;                      // Biases
-   gsl_matrix_float     *batchbiases;                 // For batch processing
+   Vector               biases;                       // Biases
+   Vector               rec_biases;
    
-   gsl_matrix_float     *extra;
-   gsl_vector_float     *sample_vector;
+   //Matrix     extra;
+   //Vector     sample_vector;
    
    float                energy;                       // Energy of the layer *TODO*
-   float                reconstruction_cost;
+   double               reconstruction_cost;
    
    // CONSTRUCTORS ---------------------------------------------------------------------------------
    
-   ~Layer(){};
-   Layer(){};
-   Layer(int n);                                   // Constructor for the Layer
+   Layer(size_t nn, size_t bs, size_t ts);                                   // Constructor for the Layer
+   Layer(const Layer&);
+   virtual Layer *clone() = 0;
+   void reset(){
+      biases.set_all(0);
+   }
+   virtual void set_defaults() = 0;
+   virtual void set_with_fanin(Layer& other) = 0;
    
    // Unit Functions------------
-   void init_activation(MLP *mlp);
-   void finish_activation(Sample_flag_t);
-   int load_data(Data_flag_t d_flag, Sample_flag_t s_flag);
    
+   int pull_data(Purpose_t purpose);
+   void finish_activation(Purpose_t, Sample_flag_t);
+   void make_noise();
    void apply_noise();
-   virtual void sample() = 0;         // Begin sampling.  If sample flag is on, calculate the samples, set samples to the expectation.
-   virtual void getExpectations() = 0;             // Find the expectated values for the layer
+   virtual void get_expectations(Purpose_t purpose) = 0;
+   virtual void sample() = 0;
+   virtual void get_derivatives() = 0;
    
    // Structure Functions------------
-   virtual void make_batch(int batchsize);          // Changes all of the unit matrices into matrices of size
-                                                   // nodenum_ x batchsize_
-   void expandBiases();                            // The biases are vectors, but it's nice to have matrix versions as well.
+
    virtual void shapeInput(DataSet* data) = 0;    // Depending on the type of layer you need to shape the input.  Should be useful in DBNS as well.
    
    // Energy Functions-------------
-   virtual float reconstructionCost(gsl_matrix_float *dataMat, gsl_matrix_float *modelMat) = 0;
-   virtual void getEnergy() = 0;
-   virtual float freeEnergy_contibution() = 0;
+   virtual double reconstructionCost(Matrix &dataMat, Matrix &modelMat);
+   virtual void getEnergy(){};
+   virtual float freeEnergy_contibution(){return 0;}
    
    // Update Functions-------------
-   void catch_stats(Stat_flag_t, Sample_flag_t);
-   virtual void update(ContrastiveDivergence*);
+   void catch_stats(Stat_flag_t);
+   void update(Teacher&, bool);
+   
+   // For Label and Stimulus Analysis.  Different types of units and data have different notions of orthogonal, and we need to capture that here.
+   virtual void set_component(int i);
+   
+   void save();
 };
 
 /////////////////////////////////////
 // Sigmoid layer class
 /////////////////////////////////////
 
-class SigmoidLayer : public Layer {
+class SigmoidLayer : public virtual Layer {
 public:
+   SigmoidLayer(size_t nn, size_t bs, size_t ts) : Layer(nn,bs,ts){ type = SIGMOID; set_defaults();}
+   SigmoidLayer(const SigmoidLayer& other) : Layer(other) {}
+   SigmoidLayer *clone() {return new SigmoidLayer(*this);}
+   void set_defaults();
    
-   SigmoidLayer(int n) : Layer(n){
-      noise = 0.5;
-      biases = gsl_vector_float_alloc(nodenum);
-      gsl_vector_float_set_all(biases, 0); // This is to force sparsity in simple cases.  Set to some negative number.  Good for analysis
-   }
-   
+   void get_expectations(Purpose_t purpose);
    void sample();
-   void getExpectations();
    void shapeInput(DataSet *data);
+   void get_derivatives();
+   void set_with_fanin(Layer& other);
    
-   float reconstructionCost(gsl_matrix_float *dataMat, gsl_matrix_float *modelMat);
-   void getEnergy(){}
-   float freeEnergy_contibution();
-   
-   void update(ContrastiveDivergence*);
-   
+   double reconstructionCost(Matrix &dataMat, Matrix &modelMat);
 };
+
 /////////////////////////////////////
 // Rectified Linear Unit layer class *TODO*
 /////////////////////////////////////
 
 class ReLULayer : public Layer {
 public:
-   ReLULayer(int n) : Layer(n){
-      noise = 0.5;
-      biases = gsl_vector_float_calloc(nodenum);
-   }
+   ReLULayer(size_t nn, size_t bs, size_t ts);
+   ReLULayer(const ReLULayer& other) : Layer(other), activations(other.activations) {}
+   ReLULayer *clone() {return new ReLULayer(*this);}
+   void set_defaults();
+   void set_with_fanin(Layer& other);
    
+   Matrix activations;
+   
+   void get_expectations(Purpose_t purpose);
    void sample();
-   void getExpectations();
    void shapeInput(DataSet* data);
-   
-   float reconstructionCost(gsl_matrix_float *dataMat, gsl_matrix_float *modelMat);
-   void getEnergy(){}
-   float freeEnergy_contibution();
-   
-   void update(ContrastiveDivergence*);
+   void get_derivatives();
 };
 
 /////////////////////////////////////
@@ -131,26 +135,16 @@ public:
 
 class GaussianLayer : public Layer {
 public:
+   GaussianLayer(size_t nn, size_t bs, size_t ts);
+   GaussianLayer(const GaussianLayer& other) : Layer(other){}
+   GaussianLayer *clone() {return new GaussianLayer(*this);}
+   void set_defaults();
+   void set_with_fanin(Layer& other);
    
-   float setsigma;
-   
-   GaussianLayer(int n);
-   
-   gsl_vector_float *quad_coefficients;
-   gsl_vector_float *sigmas;
-   
+   void get_expectations(Purpose_t purpose);
    void sample();
-   void getExpectations();
-   void getSigmas();
    void shapeInput(DataSet *data);
-   
-   void makeBatch(int batchsize);
-   
-   float reconstructionCost(gsl_matrix_float *dataMat, gsl_matrix_float *modelMat);
-   void getEnergy(){}
-   float freeEnergy_contibution(){ return 0;}
-   
-   void update(ContrastiveDivergence*);
+   void get_derivatives();
 };
 
 /////////////////////////////////////
@@ -159,23 +153,21 @@ public:
 
 class SoftmaxLayer : public Layer {
 public:
+   SoftmaxLayer(size_t nn, size_t bs, size_t ts);
+   SoftmaxLayer(const SoftmaxLayer& other) : Layer(other){}
+   SoftmaxLayer *clone() {return new SoftmaxLayer(*this);}
+   void set_defaults();
+   void set_with_fanin(Layer& other);
    
-   SoftmaxLayer(int n) : Layer(n) {
-      noise = 0.5;
-      biases = gsl_vector_float_calloc(nodenum); //Maybe .5?
-   }
-   
+   void get_expectations(Purpose_t purpose);
    void sample();
-   void getExpectations();
    void shapeInput(DataSet *data);
+   void get_derivatives();
    
-   float reconstructionCost(gsl_matrix_float *dataMat, gsl_matrix_float *modelMat);
-   void getEnergy(){}
-   float freeEnergy_contibution();
-   
-   void update(ContrastiveDivergence*);
+   double reconstructionCost(Matrix &dataMat, Matrix &modelMat);
+   void finish_activation(Sample_flag_t);
 };
 
-
+std::ostream& operator<<(std::ostream& out,Layer& layer);
 
 #endif

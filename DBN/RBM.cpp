@@ -10,136 +10,179 @@
 #include "RBM.h"
 #include "Connections.h"
 #include "Layers.h"
+#include "DataSets.h"
+#include "Monitors.h"
+#include "Monitor_Units.h"
+#include "SupportMath.h"
 
-RBM::RBM () {free_energy = 0;}
+RBM::RBM(Level level) : Level(level) {}
 
-void RBM::add_connection(Connection *connection){
-   edges.push_back(connection);
+void RBM::reset() {
+   for (auto layer:top_layers) layer->reset();
+   for (auto connection:connections) connection->reset();
 }
 
-void RBM::getFreeEnergy(){
-}
-
-void RBM::learn(){
-   teacher->teachRBM(this);
-}
-
-void RBM::prop(Edge_direction_flag_t dir){
-   
-   set_direction_flag_all(dir);
-   set_status_all_endpoints(WAITING);
-   
-   for (edge_list_iter_t e_iter = edges.begin(); e_iter != edges.end() ; ++e_iter) {
-      Connection *connection = (Connection*)(*e_iter);
-      connection->init_activation(this);
-   }
-   
-   int to_transmit = (int)edges.size();
-   edge_list_iter_t e_iter = edges.begin();
-   while (to_transmit > 0) {
-      Connection *connection = (Connection*)(*e_iter);
-      if (connection->transmit_signal(sample_flag))
-         to_transmit-=1;
-      ++e_iter;
-      if (e_iter == edges.end()) e_iter = edges.begin();
-   }
+void RBM::learn(ContrastiveDivergence& teacher){
+   teacher.teachRBM(*this);
+   for (auto layer:top_layers) layer->rec_biases = layer->biases;
 }
 
 void RBM::gibbs_HV(){
-   prop(FORWARD);
-   prop(BACKWARD);
+   transmit(UP, LEARNING, NOSAMPLE);
+   transmit(DOWN, LEARNING, NOSAMPLE);
 }
 
 void RBM::gibbs_VH(){
-   prop(BACKWARD);
-   prop(FORWARD);
+   for (auto layer:top_layers) layer->sample();
+   transmit(DOWN, LEARNING, NOSAMPLE);
+   transmit(UP, LEARNING, NOSAMPLE);
 }
 
-void RBM::update(ContrastiveDivergence *cd){
-   for (edge_list_iter_t e_iter = edges.begin(); e_iter != edges.end(); ++e_iter) {
-      Connection *connection = (Connection*)(*e_iter);
-      connection->update(cd);
+void RBM::update(ContrastiveDivergence &cd, bool apply_gain){
+   for (auto connection:connections) connection->update(cd, apply_gain);
+   for (auto layer:top_layers) {
+      layer->update(cd, false);
+   }
+   for (auto layer:bot_layers) {
+      layer->update(cd, false);
    }
 }
 
 void RBM::catch_stats(Stat_flag_t stat_flag){
-   for (edge_list_iter_t e_iter = edges.begin(); e_iter != edges.end(); ++e_iter) {
-      Connection *connection = (Connection*)(*e_iter);
-      connection->catch_stats(stat_flag, SAMPLE);
-   }
+   for (auto connection:connections) connection->catch_stats(stat_flag);
+   for (auto layer:top_layers) { layer->catch_stats(stat_flag); }
+   for (auto layer:bot_layers) { layer->catch_stats(stat_flag); }
 }
 
-void RBM::getReconstructionCost(){
-   init_data();
-   
-   load_data(TRAIN);
-   
-   for (edge_list_iter_t e_iter = edges.begin(); e_iter != edges.end(); ++e_iter) {
-      Connection *connection = (Connection*)(*e_iter);
-      connection->make_batch(0); //A hack to pass down that we want the entire input
-      Layer *from_layer = (Layer*)connection->from;
-      gsl_matrix_float_memcpy(from_layer->extra, from_layer->samples);
-   }
-   
-   sample_flag = NOSAMPLE;
-   
-   gibbs_HV();
-   
-   reconstruction_cost = 0;
-   
-   for (edge_list_iter_t e_iter = edges.begin(); e_iter != edges.end(); ++e_iter) {
-      Connection *connection = (Connection*)(*e_iter);
-      Layer *from_layer = (Layer*)connection->from;
-      reconstruction_cost += from_layer->reconstructionCost(from_layer->extra, from_layer->samples);
+void RBM::init() {
+   for (auto layer:bot_layers) layer->reset();
+   int train_size = (int)bot_layers[0]->data->train.dim1;
+   for (auto connection:connections) {
+      connection->to->set_defaults();
+      connection->from->set_defaults();
+      Layer *from = connection->from;
+      Layer *to = connection->to;
+      to->set_with_fanin(*from);
+      from->set_with_fanin(*to);
+      connection->learning_rate = to->learning_rate;
       
-      std::cout << "Reconstruction cost: " << from_layer->reconstruction_cost << std::endl;
+      if (connection->from->data->type == AOD_STIM) {connection->learning_rate = 0.0000001;}
    }
+   for (auto layer:bot_layers) layer->learning_rate/=train_size;
+   for (auto layer:top_layers) layer->learning_rate/=train_size;
 }
 
-
-void RBM::transport_data(){
-   for (edge_list_iter_t e_iter = edges.begin(); e_iter != edges.end(); ++e_iter) {
-      Connection *connection = (Connection*)(*e_iter);
-      connection->make_batch(0); //A hack to pass down that we want the entire input
-      Layer *from_layer = (Layer*)connection->from;
-      gsl_matrix_float_transpose_memcpy(from_layer->samples, from_layer->input_edge->train);
-   }
-   sample_flag = NOSAMPLE;
-   prop(FORWARD);
+float RBM::get_reconstruction_cost(){
+   std::cout << "Generating RBM reconstruction cost" << std::endl;
+   init_data();
+   pull_data(TESTING);
+   transmit(UP, TESTING, NOSAMPLE);
    
-   for (edge_list_iter_t e_iter = edges.begin(); e_iter != edges.end(); ++e_iter) {
-      Connection *connection = (Connection*)(*e_iter);
-      connection->make_batch(0); //A hack to pass down that we want the entire input
-      Layer *to_layer = (Layer*)connection->to;
-      InputEdge *input_edge = new InputEdge;
-      input_edge->train = gsl_matrix_float_alloc(to_layer->samples->size2, to_layer->samples->size1);
-      gsl_matrix_float_transpose_memcpy(input_edge->train, to_layer->samples);
-      to_layer->input_edge = input_edge;
-   }
-}
-
-void RBM::make_batch(int batch_size){
-   for (edge_list_iter_t e_iter = edges.begin(); e_iter != edges.end(); ++e_iter) {
-      Connection *connection = (Connection*)(*e_iter);
-      connection->make_batch(batch_size);
-   }
-}
-
-int RBM::load_data(Data_flag_t d_flag){
-   set_status_all(WAITING);
-   for (edge_list_iter_t e_iter = edges.begin(); e_iter != edges.end(); ++e_iter) {
-      Connection *connection = (Connection*)(*e_iter);
-      Layer *from_layer= (Layer*)connection->from;
-      if (!from_layer->load_data(d_flag, sample_flag)) return 0;
-   }
-   return 1;
-}
-
-void RBM::init_data(){
+   std::vector<Matrix> data_mats;
+   for (auto connection:connections) data_mats.push_back(connection->from->m_testing);
    
-   for (edge_list_iter_t e_iter = edges.begin(); e_iter != edges.end(); ++e_iter) {
-      Connection *connection = (Connection*)(*e_iter);
-      connection->init_data();
+   transmit(DOWN, TESTING, NOSAMPLE);
+   
+   float reconstruction_cost = 0;
+   
+   auto d_iter = data_mats.begin();
+   for (auto connection:connections) {
+      float rc = connection->from->reconstructionCost(*d_iter, connection->from->m_testing);
+      std::cout << "Reconstruction cost for [" << *connection << "]: " << rc << std::endl;
+      reconstruction_cost += rc;
+      ++d_iter;
    }
    
+   std::cout << "RBM Reconstruction cost: " << reconstruction_cost << std::endl;
+   return reconstruction_cost;
+}
+
+//------ RBM Learning Methods
+
+void ContrastiveDivergence::getStats(RBM &rbm) {
+   rbm.catch_stats(POS);
+   for(int g = 0; g < k; ++g) rbm.gibbs_VH();
+   rbm.catch_stats(NEG);
+}
+
+void ContrastiveDivergence::teachRBM(RBM &rbm){
+   rbm.init();
+   
+   momentum = .5, k = 1, learning_multiplier = 5;
+   std::cout << "Teaching RBM with parameters " << " K = " << k  << ", Momentum = " << momentum << std::endl;
+   learning = true;
+   int epoch = 0;
+   while (epoch <= epochs && learning){
+      clock_t eStart = clock();
+      //std::cout << "    Epoch " << epoch << std::endl;
+      rbm.init_data();
+      
+      bool data_reset;
+      learning_count = 0;
+      do {
+         std::cout.flush();
+         data_reset = !((bool)rbm.pull_data(LEARNING));
+         rbm.transmit(UP, LEARNING, NOSAMPLE);
+         getStats(rbm);
+         rbm.update(*this, data_reset);
+#if 0
+         if (learning_count%10 == 0) {
+            std::cout << "..";
+#ifdef USEGL
+            if (monitor != NULL) monitor->update();
+#endif
+         }
+#endif
+         learning_count += 1;
+      } while ( !data_reset );
+      ++epoch;
+      //std::cout << std::endl;
+      
+      if (epoch%1 == 0) {
+         if (monitor != NULL) {
+            //rbm.get_reconstruction_cost();
+            std::cout << epoch << ": ";
+            monitor->update_stats();
+            check_early_stop(&rbm, epoch);
+         }
+         else rbm.get_reconstruction_cost();
+      }
+      
+      if (learning_multiplier > 1) learning_multiplier *= .8;
+      else learning_multiplier = 1;
+      //std::cout << "Epoch took " << (double)(clock()-eStart)/CLOCKS_PER_SEC << " seconds" << std::endl;
+   }
+}
+
+void Teacher::check_early_stop(RBM *rbm, int &epoch) {
+   if (((Layer_Monitor*)monitor)->rc_monitor != NULL) {
+      Reconstruction_Cost_Monitor *rc_mon = ((Layer_Monitor*)monitor)->rc_monitor;
+      rc_mon->check();
+#if 0
+      if (rc_mon->status != OK && rc_mon->status != SLOW)
+         learning = false;
+      if (rc_mon->status == DONE) std::cout << "Learning converged, STOPPING" << std::endl;
+      if (rc_mon->status == BROKEN) std::cout << "Learning diverging, STOPPING" << std::endl;
+#elseif 0
+      if (rc_mon->status == DONE) std::cout << "Learning appears to be converged.  Try stopping here" << std::endl;
+#endif
+      /*if (rc_mon->status == BROKEN) {
+       std::cout << "Learning appears to be diverging. RESETTING" << std::endl;
+       rbm->reset();
+       epoch = 0;
+       momentum = .5;
+       k = 1;
+       learning_multiplier = 75;
+       }*/
+      
+      if (rc_mon->status == SLOW && momentum != 0 && momentum < .9) {
+         momentum *= 1.05;
+         std::cout << "Increasing momentum to " << momentum << std::endl;
+         if (epoch > 50 && k < 5) {
+            k = 5;
+            for (auto connection:rbm->connections) connection->learning_rate/=100;
+            std::cout << "Increasing k to " << k << std::endl;
+         }
+      }
+   }
 }

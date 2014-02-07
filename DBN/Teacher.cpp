@@ -9,64 +9,55 @@
 #include "Teacher.h"
 #include "RBM.h"
 #include "Viz.h"
+#include "SupportFunctions.h"
+#include "Layers.h"
+#include "Connections.h"
+#include "Monitors.h"
+#include <math.h>
+#include "Monitor_Units.h"
 
-ContrastiveDivergence::ContrastiveDivergence(float momentum, int k, int batchsize, int e) : momentum(momentum), k(k), batchsize(batchsize), epochs(e)
-{
-   monitor = NULL;
-   identity = gsl_vector_float_alloc(batchsize);
-   gsl_vector_float_set_all(identity, 1);
-}
+//------ For increasing and decreasing the learning rate during visualization.
 
-void ContrastiveDivergence::getStats(RBM *rbm){
+void Teacher::multiply_rate() {learning_multiplier *=2;}
+void Teacher::divide_rate() {learning_multiplier /=2;}
+
+void LearningUnit::update(Teacher &teacher, bool apply_gain) {
+   if (teacher.learning_multiplier >1) gradient*=teacher.learning_multiplier;
    
-   // Activate the top layer, get the expectations, and sample.
-   
-   rbm->prop(FORWARD);
+   if (gain) gradient *= learning_gain;
+   if (gain && apply_gain) {
+      Matrix *prev;
+      if (teacher.momentum > 0) prev = &prev_velocity;
+      else                      prev = &prev_gradient;
+      learning_gain.adjust_gain(*prev, acc_gradient);
+      prev_gradient = acc_gradient;
+      prev_velocity = acc_velocity;
+      acc_gradient.set_all(0);
+      acc_velocity.set_all(0);
+   }
+   if (teacher.momentum > 0) {
+      *param += velocity;
+      velocity = (teacher.momentum*velocity) + gradient;
+   }
+   else *param += gradient;
 
-   // Positive stats
-   rbm->catch_stats(POS);
-   
-   // Gibbs VH sample k times.
-   for(int g = 0; g < k; ++g) rbm->gibbs_VH();
-
-   // Negative stats.
-   rbm->catch_stats(NEG);
-}
-
-void ContrastiveDivergence::teachRBM(RBM *rbm){
-   for (int e = 1; e <= epochs; ++e){
-      
-      rbm->make_batch(batchsize);
-      rbm->sample_flag = SAMPLE;
-      
-      // Get dimensions
-      
-      std::cout << std::endl << "Teaching RBM with input, epoch" << e << std::endl << "     K: " << k << std::endl << "     Batch Size: " << batchsize << std::endl;
-      
-      rbm->init_data();
-      // Loop through the input
-      int batchnumber = 1;
-      
-      while (rbm->load_data(TRAIN)){
-         
-         //monitor->update();
-         // Gets statistics by performing CD.
-         getStats(rbm);
-         
-         // Update the parameters.
-         rbm->update(this);
-         
-         // And monitor
-         
-         if (batchnumber%100 == 0 && monitor != NULL) {
-            std::cout << "Batch number: " << batchnumber << std::endl;
-            //monitor->update();
-         }
-         batchnumber+=1;
-      }
-      rbm->getReconstructionCost();
-      monitor->update();
-      
+   if (gain) {
+      acc_gradient += gradient;
+      acc_velocity += velocity;
    }
    
+   switch (decay_type) {
+      case NONE: break;
+      case MAXWEIGHT: {
+         (*param).flatten_rows(weight_max_length);
+         //velocity.flatten_rows(2*weight_max_length);
+      }
+      default: {
+         float d_rate;
+         if (decay_rate == AUTO) d_rate = learning_rate/param->dim2*0.0002;
+         *param -= d_rate*(*param)*learning_gain;
+      } break;
+   }
 }
+
+

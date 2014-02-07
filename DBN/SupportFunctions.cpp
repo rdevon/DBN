@@ -9,35 +9,6 @@
 #include <iostream>
 #include "SupportFunctions.h"
 
-gsl_vector_int *makeShuffleList(int length){
-   
-   
-   gsl_vector_int *list = gsl_vector_int_alloc(length);
-   
-   for (int i = 0; i < 10; ++i) gsl_vector_int_set(list, i, i);
-   
-   gsl_ran_shuffle(r, list->data, list->size, sizeof(int));
-   
-   return list;
-}
-
-void print_gsl(gsl_vector_float *v){
-   for (int i = 0; i < v->size; ++i) std::cout << gsl_vector_float_get(v, i) << " ";
-   std::cout << std::endl;
-}
-
-void print_gsl(gsl_vector_int *v){
-   for (int i = 0; i < v->size; ++i) std::cout << gsl_vector_int_get(v, i) << " ";
-   std::cout << std::endl;
-}
-
-void print_gsl(gsl_matrix_float *m){
-   for (int i = 0; i < m->size1; ++i){
-      for (int j = 0; j < m->size2; ++j) std::cout << gsl_matrix_float_get(m, i, j) << " ";
-      std::cout << std::endl;
-   }
-}
-
 std::string readTextFile(const std::string& filename)
 {
    std::ifstream infile(filename.c_str()); // File stream
@@ -62,10 +33,31 @@ std::string readTextFile(const std::string& filename)
    return source;
 }
 
-void save_gsl_matrix(gsl_matrix_float *m){
-   std::string path = plotpath + "test.out";
-   FILE *file_handle;
-   file_handle = fopen(path.c_str(), "w");
-   gsl_matrix_float_fprintf(file_handle, m, "%.5g");
-   fclose(file_handle);
+void error(std::string message) {
+   std::cout << "ERROR: " << message << std::endl;
+   exit(EXIT_FAILURE);
+}
+
+std::vector<float> load_dlm(std::string filename) {
+   std::vector<float> values;
+   std::ifstream file;
+   file.open(filename.c_str());
+   float value;
+   std::string line;
+   getline(file, line);
+   std::istringstream iss(line);
+   while ( iss >> value) values.push_back(value);
+   return values;
+}
+
+std::ostream& operator<<(std::ostream& out, std::vector<float> vec) {
+   for (auto val:vec) out << val << " ";
+   return out;
+}
+
+void save(std::vector<float> vec, std::string file_name) {
+   std::ofstream outstream;
+   outstream.open(file_name.c_str());
+   outstream << vec;
+   outstream.close();
 }
